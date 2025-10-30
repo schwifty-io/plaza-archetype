@@ -96,7 +96,7 @@ function computeScores(answers){
 }
 
 /** ---------------------------
- *  UI (no tailwind)
+ *  UI 
  *  ---------------------------
  */
 const theme = {
