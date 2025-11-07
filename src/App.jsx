@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useMemo, useState } from "react";
 
 /**
@@ -7,6 +6,11 @@ import React, { useMemo, useState } from "react";
  * - Standard item: right-pole = 70, left-pole = 30
  * - Dimension thresholds: >=60 → right pole; <40 → left pole; 40–59 → use key-mean tiebreaker; else default left
  * Capacity flags (ability guardrails) will temper Risk Willingness B → S if any flag triggers.
+ *
+ * Additions in this version:
+ * - Age input (not scored, for cohort analysis)
+ * - Section 5: Age & Change (5.1–5.3 only for ChangeIndex; 5.4–5.5 both for Risk Willingness and ChangeIndex)
+ * - ChangeIndex (0–5) and direction (↑ more daring / → no clear change / ↓ more cautious)
  */
 
 // ===== 16 archetype descriptions (from your doc) =====
@@ -45,9 +49,9 @@ const ARCHETYPE_DESCRIPTIONS = {
     "The Casual Speculator — Markets are a hobby, not a mission. They enjoy reading financial news, trying ideas, and sometimes following tips — but without a deep plan. They see investing as part intuition, part entertainment. Advisors who keep things light yet educational can gradually build trust and structure around their behavior. Left unguided, they drift with trends; guided well, they mature into balanced investors who enjoy both the process and the purpose.",
 };
 
-// ===== Questions (same structure you already use) =====
+// ===== Questions (Sections 1–4: your current design; Section 5: Age & Change) =====
 const QUESTIONS = [
-  // Situation & Goals (Motivation / Capacity flags)
+  // ===== 1. Situation & Goals =====
   { code: "1.1", section: "Situation & Goals",
     text: "Imagine you plan to withdraw money from your investments in the near future. Would you rather begin withdrawals within the next few years or wait more than 10 years?",
     A: "Begin within a few years", B: "Wait over 10 years",
@@ -55,7 +59,8 @@ const QUESTIONS = [
   { code: "1.2", section: "Situation & Goals",
     text: "Once withdrawals begin, would you prefer to draw funds over a short period (less than 5 years) or plan for a longer duration?",
     A: "Short period", B: "Long duration",
-    dimension: "CapacityConstraint", cap: (opt)=>({ Short_Horizon_Flag: opt==="A" }) },
+    dimension: "CapacityConstraint",
+    cap: (opt)=>({ Short_Horizon_Flag: opt==="A" }) },
   { code: "1.3", section: "Situation & Goals",
     text: "If you had to choose an investment horizon, would you focus on the short term or long-term growth potential?",
     A: "Short term", B: "Long term",
@@ -71,25 +76,29 @@ const QUESTIONS = [
   { code: "1.6", section: "Situation & Goals",
     text: "Imagine an investment that offers higher return potential but with larger losses possible in a given year. Would you accept it or prefer a safer alternative?",
     A: "Accept higher potential losses", B: "Choose safer option",
-    dimension: "CapacityConstraint", cap: (opt)=>({ ConsistencyCheck: opt==="A" ? "Aggressive":"Conservative" }) },
+    dimension: "CapacityConstraint",
+    cap: (opt)=>({ ConsistencyCheck: opt==="A" ? "Aggressive":"Conservative" }) },
   { code: "1.7", section: "Situation & Goals",
     text: "Suppose your annual income and net worth are limited. Would you still invest aggressively or remain conservative?",
     A: "Invest aggressively", B: "Remain conservative",
-    dimension: "CapacityConstraint", cap: (opt)=>({ LowCapacity_Aggressive: opt==="A" }) },
+    dimension: "CapacityConstraint",
+    cap: (opt)=>({ LowCapacity_Aggressive: opt==="A" }) },
   { code: "1.8", section: "Situation & Goals",
     text: "If a large share of your total liquid assets would be invested in one account, would you be comfortable concentrating or prefer spreading risk?",
     A: "Concentrate investment", B: "Spread risk",
-    dimension: "CapacityConstraint", cap: (opt)=>({ Concentration_Flag: opt==="A" }) },
+    dimension: "CapacityConstraint",
+    cap: (opt)=>({ Concentration_Flag: opt==="A" }) },
   { code: "1.9", section: "Situation & Goals",
     text: "Imagine you face an emergency expense. Would you rely on your portfolio or your separate emergency reserves?",
     A: "Use portfolio", B: "Use emergency reserves",
-    dimension: "CapacityConstraint", cap: (opt)=>({ No_Emergency_Fund: opt==="A" }) },
+    dimension: "CapacityConstraint",
+    cap: (opt)=>({ No_Emergency_Fund: opt==="A" }) },
   { code: "1.10", section: "Situation & Goals",
     text: "If you rely on this account for living expenses, would you draw regularly or preserve it for future use?",
     A: "Draw regularly", B: "Preserve for future",
     dimension: "Motivation", isKey:false, weight:1, high:"B" },
 
-  // Risk Tolerance (Willingness)
+  // ===== 2. Risk Tolerance =====
   { code: "2.1", section: "Risk Tolerance",
     text: "If your portfolio dropped 25% in three months, would you sell part to reduce losses or hold through volatility?",
     A: "Sell part", B: "Hold through volatility",
@@ -107,7 +116,7 @@ const QUESTIONS = [
     A: "Comfortable with deviations", B: "Track the index closely",
     dimension: "RiskTolerance_Willingness", isKey:false, weight:1, high:"A" },
 
-  // Age & Experience
+  // ===== 3. Age & Experience =====
   { code: "3.1", section: "Age & Experience",
     text: "When markets swing sharply, do you usually stay calm or feel anxious about potential losses?",
     A: "Stay calm", B: "Feel anxious",
@@ -129,7 +138,7 @@ const QUESTIONS = [
     A: "Analyze independently", B: "Follow advisor recommendations",
     dimension: "Experience", isKey:false, weight:1, high:"A" },
 
-  // Behavioral & Psychological
+  // ===== 4. Behavioral & Psychological =====
   { code: "4.1", section: "Behavioral & Psychological",
     text: "When markets drop suddenly, do you check your investments frequently or avoid looking for a while?",
     A: "Check frequently", B: "Avoid looking",
@@ -170,6 +179,31 @@ const QUESTIONS = [
     text: "In stressful times, would you prefer your advisor to reduce risk proactively or stay the course per plan?",
     A: "Reduce risk", B: "Stay the course",
     dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B" },
+
+  // ===== 5. Age & Change =====
+  // 5.1–5.3: only for ChangeIndex (not used in archetype scoring)
+  { code: "5.1", section: "Age & Change",
+    text: "Compared to three years ago, when facing a 15% drawdown, are you now more likely to hold and rebalance or to de-risk?",
+    A: "Hold & rebalance (more comfortable now)", B: "De-risk or sell (more cautious now)",
+    dimension: "ChangeOnly", isKey: false },
+  { code: "5.2", section: "Age & Change",
+    text: "Compared to three years ago, your comfort with deviating from the index (tracking error) is:",
+    A: "Higher now (more comfortable)", B: "Lower or the same (more cautious)",
+    dimension: "ChangeOnly", isKey: false },
+  { code: "5.3", section: "Age & Change",
+    text: "Compared to three years ago, your tolerance for annual ups and downs is:",
+    A: "Higher now", B: "Lower now",
+    dimension: "ChangeOnly", isKey: false },
+
+  // 5.4–5.5: count both for Risk Willingness and ChangeIndex
+  { code: "5.4", section: "Age & Change",
+    text: "Gain frame: choose between a sure +4% or a 50% chance of +10% and 50% of 0%.",
+    A: "Sure +4%", B: "50% chance +10% / 50% 0%",
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
+  { code: "5.5", section: "Age & Change",
+    text: "Loss frame: choose between a sure −4% or a 50% chance of −10% and 50% of 0%.",
+    A: "Sure −4%", B: "50% chance −10% / 50% 0%",
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
 ];
 
 // === Polarity letters ===
@@ -188,20 +222,33 @@ function computeScores(answers){
 
   for(const q of QUESTIONS){
     const opt=answers[q.code]; if(!opt) continue;
-    if(q.dimension==="CapacityConstraint" && q.cap){ Object.assign(capacity, q.cap(opt)); continue; }
+
+    // capacity guardrails
+    if(q.dimension==="CapacityConstraint" && q.cap){
+      Object.assign(capacity, q.cap(opt));
+      continue;
+    }
+
+    // skip items not belonging to the four scored dimensions
+    if(!(q.dimension in perDim)) continue;
+
+    // numeric scoring
     const towardRight = (opt === (q.high || "B"));
     const s = towardRight ? (q.isKey?keyHigh:stdHigh) : (q.isKey?keyLow:stdLow);
     perDim[q.dimension].push({ score:s, w:q.weight||1, isKey:!!q.isKey });
   }
 
+  // dimension averages
   const dimScores={};
   for(const d of Object.keys(perDim)){
-    const arr=perDim[d]; if(!arr.length){ dimScores[d]=null; continue; }
+    const arr=perDim[d];
+    if(!arr.length){ dimScores[d]=null; continue; }
     const w=arr.reduce((s,a)=>s+(a.w||1),0);
     const tot=arr.reduce((s,a)=>s+(a.score||0)*(a.w||1),0);
     dimScores[d]=Math.round((tot/w)*100)/100;
   }
 
+  // polarity with thresholds + key tie-break
   const polarities={};
   for(const d of Object.keys(RIGHT_LEFT)){
     const sc=dimScores[d], [r,l]=RIGHT_LEFT[d];
@@ -215,12 +262,24 @@ function computeScores(answers){
     else polarities[d]=DEFAULT_GRAY[d];
   }
 
+  // capacity tempering
   const hard = capacity.Short_Horizon_Flag||capacity.Concentration_Flag||capacity.No_Emergency_Fund||capacity.LowCapacity_Aggressive;
   let riskLetter = polarities.RiskTolerance_Willingness||"S", capacityAdjusted=false;
   if(hard && riskLetter==="B"){ riskLetter="S"; capacityAdjusted=true; }
 
   const code = `${polarities.Motivation||"L"}${riskLetter}${polarities.Experience||"F"}${polarities.BehavioralControl||"D"}`;
   return { dimScores, polarities:{...polarities,RiskTolerance_Willingness:riskLetter}, archetype:code, capacity, capacityAdjusted };
+}
+
+// ChangeIndex: 5.1–5.3 A=“更敢”；5.4–5.5 B=“更敢”
+function computeChangeIndex(ans){
+  const more = ["5.1","5.2","5.3"].reduce((s,c)=> s + (ans[c]==="A" ? 1 : 0), 0);
+  const extra = ["5.4","5.5"].reduce((s,c)=> s + (ans[c]==="B" ? 1 : 0), 0);
+  const score = more + extra;   // 0–5
+  let dir = "→";                // no clear change
+  if (score >= 4) dir = "↑";    // more daring now
+  else if (score <= 1) dir = "↓"; // more cautious now
+  return { score, direction: dir };
 }
 
 // ===== Minimal, clean UI (no Tailwind) =====
@@ -306,11 +365,13 @@ function Stat({title, score, pol}){
 export default function App(){
   const [answers,setAnswers]=useState({});
   const [show,setShow]=useState(false);
+  const [age, setAge] = useState("");
 
   const done = Object.keys(answers).filter(k=>answers[k]).length;
   const progress = Math.round((done/QUESTIONS.length)*100);
 
   const result = useMemo(()=>computeScores(answers),[answers]);
+  const change = useMemo(()=>computeChangeIndex(answers), [answers]);
   const desc = ARCHETYPE_DESCRIPTIONS[result.archetype] || "No description available for this code.";
 
   return (
@@ -321,10 +382,23 @@ export default function App(){
           <div>
             <h1 style={S.h1}>Plaza Financial Archetype — Questionnaire</h1>
             <p style={S.hint}>Choose A/B for each question. You can submit with partial answers.</p>
+            {/* Age input */}
+            <div style={{ display:"flex", gap:12, alignItems:"center", marginTop:8 }}>
+              <label style={{ fontSize:13, color:"#666" }}>
+                Age:&nbsp;
+                <input
+                  type="number" min="18" max="99" value={age}
+                  onChange={(e)=>setAge(e.target.value)}
+                  style={{ width:80, padding:"6px 8px", border:"1px solid #e6e6e6", borderRadius:8 }}
+                />
+              </label>
+            </div>
           </div>
-          <div style={S.progressBox}>
-            <div style={{textAlign:"right", fontSize:12, color:theme.subtext, marginBottom:4}}>{progress}%</div>
-            <div style={S.progressBar}><div style={S.progressInner(progress)}/></div>
+          <div>
+            <div style={S.progressBox}>
+              <div style={{textAlign:"right", fontSize:12, color:theme.subtext, marginBottom:4}}>{progress}%</div>
+              <div style={S.progressBar}><div style={S.progressInner(progress)}/></div>
+            </div>
           </div>
         </div>
 
@@ -338,7 +412,7 @@ export default function App(){
         {/* actions */}
         <div style={S.btnRow}>
           <button style={S.btnPrimary} onClick={()=>setShow(true)}>Compute Archetype</button>
-          <button style={S.btnOutline} onClick={()=>{ setAnswers({}); setShow(false); }}>Reset</button>
+          <button style={S.btnOutline} onClick={()=>{ setAnswers({}); setShow(false); setAge(""); }}>Reset</button>
         </div>
 
         {/* results */}
@@ -347,6 +421,8 @@ export default function App(){
             <div style={S.resultHead}>
               <div style={{fontSize:18, fontWeight:700}}>Results</div>
               <div style={S.badge}>Archetype: <b>{result.archetype}</b></div>
+              <div style={S.badge}>Change vs 3y: <b>{change.direction}</b> <span style={{color:"#666"}}>({change.score}/5)</span></div>
+              {age && <div style={S.badge}>Age: <b>{age}</b></div>}
               {result.capacityAdjusted && <div style={{...S.badge, borderColor: theme.green, color: theme.green}}>Capacity triggered → Risk set to S</div>}
             </div>
 
@@ -358,7 +434,7 @@ export default function App(){
             </div>
 
             <p style={S.note}>
-              Scoring bands: Standard 30/70; Key 20/80. Thresholds ≥60 → right pole (M/B/E/D); &lt;40 → left pole (L/S/F/C); gray zone uses key-item mean; conservative default. Capacity flags temper Risk Willingness (B → S) when triggered.
+              Scoring bands: Standard 30/70; Key 20/80. Thresholds ≥60 → right pole (M/B/E/D); &lt;40 → left pole (L/S/F/C); gray zone uses key-item mean; conservative default. Capacity flags temper Risk Willingness (B → S) when triggered. Age and ChangeIndex are supplementary (not altering dimension scores).
             </p>
 
             {/* archetype full description */}
