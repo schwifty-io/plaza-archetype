@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useMemo, useState } from "react";
 
 /**
@@ -7,13 +8,14 @@ import React, { useMemo, useState } from "react";
  * - Dimension thresholds: >=60 → right pole; <40 → left pole; 40–59 → use key-mean tiebreaker; else default left
  * Capacity flags (ability guardrails) will temper Risk Willingness B → S if any flag triggers.
  *
- * Additions in this version:
- * - Age input (not scored, for cohort analysis)
- * - Section 5: Age & Change (5.1–5.3 only for ChangeIndex; 5.4–5.5 both for Risk Willingness and ChangeIndex)
- * - ChangeIndex (0–5) and direction (↑ more daring / → no clear change / ↓ more cautious)
+ * This version:
+ * - Age input (not scored)
+ * - Section 5: Age & Change now only 5.1–5.3 (ChangeIndex only)
+ * - Former 5.4/5.5 moved to Section 2 as 2.5/2.6 (Risk Willingness + ChangeIndex)
+ * - ChangeIndex (0–5) & direction (↑/→/↓)
  */
 
-// ===== 16 archetype descriptions (from your doc) =====
+// ===== 16 archetype descriptions =====
 const ARCHETYPE_DESCRIPTIONS = {
   "MSED":
     "The Steady Builder — Disciplined and dependable, this investor treats markets like a marathon, not a sprint. They plan carefully, trust process over emotion, and prefer gradual progress to sudden leaps. Years of experience have shaped their calm, rational approach to uncertainty. They appreciate structure — asset allocation models, diversification, and quarterly check-ins give them confidence. They aren’t swayed by headlines, preferring fundamentals and consistency. To them, wealth is the outcome of prudence, patience, and purpose.",
@@ -49,7 +51,7 @@ const ARCHETYPE_DESCRIPTIONS = {
     "The Casual Speculator — Markets are a hobby, not a mission. They enjoy reading financial news, trying ideas, and sometimes following tips — but without a deep plan. They see investing as part intuition, part entertainment. Advisors who keep things light yet educational can gradually build trust and structure around their behavior. Left unguided, they drift with trends; guided well, they mature into balanced investors who enjoy both the process and the purpose.",
 };
 
-// ===== Questions (Sections 1–4: your current design; Section 5: Age & Change) =====
+// ===== Questions (Sections 1–4; Section 5 only has 5.1–5.3 now) =====
 const QUESTIONS = [
   // ===== 1. Situation & Goals =====
   { code: "1.1", section: "Situation & Goals",
@@ -116,6 +118,16 @@ const QUESTIONS = [
     A: "Comfortable with deviations", B: "Track the index closely",
     dimension: "RiskTolerance_Willingness", isKey:false, weight:1, high:"A" },
 
+  // <-- moved from 5.4 / 5.5 to here -->
+  { code: "2.5", section: "Risk Tolerance",
+    text: "Gain frame: choose between a sure +4% or a 50% chance of +10% and 50% of 0%.",
+    A: "Sure +4%", B: "50% chance +10% / 50% 0%",
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
+  { code: "2.6", section: "Risk Tolerance",
+    text: "Loss frame: choose between a sure −4% or a 50% chance of −10% and 50% of 0%.",
+    A: "Sure −4%", B: "50% chance −10% / 50% 0%",
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
+
   // ===== 3. Age & Experience =====
   { code: "3.1", section: "Age & Experience",
     text: "When markets swing sharply, do you usually stay calm or feel anxious about potential losses?",
@@ -180,8 +192,7 @@ const QUESTIONS = [
     A: "Reduce risk", B: "Stay the course",
     dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B" },
 
-  // ===== 5. Age & Change =====
-  // 5.1–5.3: only for ChangeIndex (not used in archetype scoring)
+  // ===== 5. Age & Change (ChangeOnly) =====
   { code: "5.1", section: "Age & Change",
     text: "Compared to three years ago, when facing a 15% drawdown, are you now more likely to hold and rebalance or to de-risk?",
     A: "Hold & rebalance (more comfortable now)", B: "De-risk or sell (more cautious now)",
@@ -194,19 +205,9 @@ const QUESTIONS = [
     text: "Compared to three years ago, your tolerance for annual ups and downs is:",
     A: "Higher now", B: "Lower now",
     dimension: "ChangeOnly", isKey: false },
-
-  // 5.4–5.5: count both for Risk Willingness and ChangeIndex
-  { code: "5.4", section: "Age & Change",
-    text: "Gain frame: choose between a sure +4% or a 50% chance of +10% and 50% of 0%.",
-    A: "Sure +4%", B: "50% chance +10% / 50% 0%",
-    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
-  { code: "5.5", section: "Age & Change",
-    text: "Loss frame: choose between a sure −4% or a 50% chance of −10% and 50% of 0%.",
-    A: "Sure −4%", B: "50% chance −10% / 50% 0%",
-    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
 ];
 
-// === Polarity letters ===
+// === Polarity & defaults ===
 const RIGHT_LEFT = {
   Motivation: ["M","L"],
   RiskTolerance_Willingness: ["B","S"],
@@ -229,10 +230,9 @@ function computeScores(answers){
       continue;
     }
 
-    // skip items not belonging to the four scored dimensions
+    // only score the four core dimensions
     if(!(q.dimension in perDim)) continue;
 
-    // numeric scoring
     const towardRight = (opt === (q.high || "B"));
     const s = towardRight ? (q.isKey?keyHigh:stdHigh) : (q.isKey?keyLow:stdLow);
     perDim[q.dimension].push({ score:s, w:q.weight||1, isKey:!!q.isKey });
@@ -262,7 +262,7 @@ function computeScores(answers){
     else polarities[d]=DEFAULT_GRAY[d];
   }
 
-  // capacity tempering
+  // capacity tempering (B → S)
   const hard = capacity.Short_Horizon_Flag||capacity.Concentration_Flag||capacity.No_Emergency_Fund||capacity.LowCapacity_Aggressive;
   let riskLetter = polarities.RiskTolerance_Willingness||"S", capacityAdjusted=false;
   if(hard && riskLetter==="B"){ riskLetter="S"; capacityAdjusted=true; }
@@ -271,10 +271,10 @@ function computeScores(answers){
   return { dimScores, polarities:{...polarities,RiskTolerance_Willingness:riskLetter}, archetype:code, capacity, capacityAdjusted };
 }
 
-// ChangeIndex: 5.1–5.3 A=“更敢”；5.4–5.5 B=“更敢”
+// ChangeIndex: 5.1–5.3 A=“more daring”；2.5–2.6 B=“more daring”
 function computeChangeIndex(ans){
   const more = ["5.1","5.2","5.3"].reduce((s,c)=> s + (ans[c]==="A" ? 1 : 0), 0);
-  const extra = ["5.4","5.5"].reduce((s,c)=> s + (ans[c]==="B" ? 1 : 0), 0);
+  const extra = ["2.5","2.6"].reduce((s,c)=> s + (ans[c]==="B" ? 1 : 0), 0);
   const score = more + extra;   // 0–5
   let dir = "→";                // no clear change
   if (score >= 4) dir = "↑";    // more daring now
@@ -434,7 +434,7 @@ export default function App(){
             </div>
 
             <p style={S.note}>
-              Scoring bands: Standard 30/70; Key 20/80. Thresholds ≥60 → right pole (M/B/E/D); &lt;40 → left pole (L/S/F/C); gray zone uses key-item mean; conservative default. Capacity flags temper Risk Willingness (B → S) when triggered. Age and ChangeIndex are supplementary (not altering dimension scores).
+              Scoring bands: Standard 30/70; Key 20/80. Thresholds ≥60 → right pole (M/B/E/D); &lt;40 → left pole (L/S/F/C); gray zone uses key-item mean; conservative default. Capacity flags temper Risk Willingness (B → S) when triggered. Age and ChangeIndex are supplementary.
             </p>
 
             {/* archetype full description */}
