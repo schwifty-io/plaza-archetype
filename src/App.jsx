@@ -663,25 +663,28 @@ function ProfitLossChart({ scenario = "profit" }) {
       </svg>
     );
   } else {
-    // Loss scenario - realistic declining pattern
+    // Loss scenario - realistic declining pattern (loss increases downward)
     const numPoints = 18;
-    let lastY = baseY;
+    const maxLoss = 30; // Maximum loss percentage
+    let lastY = padding.top; // Start at top (0% loss)
     const yValues = [];
     
     for (let i = 0; i < numPoints; i++) {
       const x = padding.left + (i / (numPoints - 1)) * chartWidth;
       const progress = i / (numPoints - 1);
       
-      // Declining trend with some volatility
-      const decline = progress * 0.6;
-      const wave = Math.sin(i * 0.5) * 0.1;
-      const random = (pseudoRandom(i) - 0.5) * 0.08;
-      const momentum = (lastY - baseY) / (chartHeight * 0.7) * 0.12;
+      // Loss increases as we go down
+      const lossPercent = progress * maxLoss;
+      const wave = Math.sin(i * 0.5) * 2; // Small volatility in loss
+      const random = (pseudoRandom(i) - 0.5) * 1.5;
+      const momentum = (lastY - padding.top) / chartHeight * 2;
       
-      // Occasional small bounces (dead cat bounce)
-      const bounce = progress > 0.3 && progress < 0.35 ? -0.05 : 0;
+      // Occasional small bounces (dead cat bounce) - temporary reduction in loss
+      const bounce = progress > 0.3 && progress < 0.35 ? -1.5 : 0;
       
-      const y = baseY + (decline + wave + random + momentum + bounce) * (chartHeight * 0.7);
+      const totalLoss = lossPercent + wave + random + momentum + bounce;
+      // Loss increases downward, so y increases as loss increases
+      const y = padding.top + (totalLoss / maxLoss) * chartHeight * 0.75;
       lastY = y;
       yValues.push({ x, y });
     }
@@ -690,8 +693,8 @@ function ProfitLossChart({ scenario = "profit" }) {
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
         {/* Grid */}
-        {[0, 0.5, 1].map((ratio, i) => {
-          const y = padding.top + ratio * chartHeight;
+        {[0, 0.33, 0.67, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight * 0.75;
           return (
             <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
                   stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
@@ -699,8 +702,27 @@ function ProfitLossChart({ scenario = "profit" }) {
         })}
         
         {/* Axes */}
-        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
-        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight * 0.75} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={padding.top} x2={width - padding.right} y2={padding.top} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Y-axis labels - Loss increases downward */}
+        {[0, 0.33, 0.67, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight * 0.75;
+          const lossValue = Math.round(ratio * maxLoss);
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {lossValue}%
+              </text>
+            </g>
+          );
+        })}
+        
+        {/* Y-axis title */}
+        <text x="15" y={padding.top + chartHeight * 0.375} textAnchor="middle" fontSize="9" fill="#374151" fontWeight="600" transform={`rotate(-90, 15, ${padding.top + chartHeight * 0.375})`}>
+          Loss
+        </text>
         
         {/* Chart line */}
         <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
