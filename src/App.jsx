@@ -1,6 +1,240 @@
 // src/App.jsx
 import React, { useMemo, useState } from "react";
 
+// ===== Visualization Components =====
+function PortfolioDropChart({ dropPercent = 25 }) {
+  const width = 300, height = 120;
+  const points = Array.from({ length: 12 }, (_, i) => {
+    const x = (i / 11) * width;
+    const y = i < 9 ? height - 20 - (i * 8) : height - 20 - (9 * 8) - ((i - 9) * 25);
+    return `${x},${y}`;
+  }).join(" ");
+  
+  return (
+    <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
+      <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
+      <line x1="0" y1={height - 20} x2={width} y2={height - 20} stroke="#666" strokeWidth="1" />
+      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">
+        3 months
+      </text>
+      <text x="5" y="15" fontSize="11" fill="#ef4444" fontWeight="600">
+        -{dropPercent}%
+      </text>
+    </svg>
+  );
+}
+
+function VolatilityChart({ type = "volatile" }) {
+  const width = 300, height = 120;
+  const baseY = height - 20;
+  // Use deterministic pseudo-random values based on index
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  const points = type === "volatile" 
+    ? Array.from({ length: 15 }, (_, i) => {
+        const x = (i / 14) * width;
+        const y = baseY - (Math.sin(i * 0.8) * 30 + pseudoRandom(i) * 20 - 10);
+        return `${x},${y}`;
+      }).join(" ")
+    : Array.from({ length: 15 }, (_, i) => {
+        const x = (i / 14) * width;
+        const y = baseY - 10 - (i * 2);
+        return `${x},${y}`;
+      }).join(" ");
+  
+  return (
+    <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
+      <polyline points={points} fill="none" stroke={type === "volatile" ? "#f59e0b" : "#22c55e"} strokeWidth="2" />
+      <line x1="0" y1={baseY} x2={width} y2={baseY} stroke="#666" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function ComparisonCharts({ type = "steady" }) {
+  const width = 140, height = 100;
+  const baseY = height - 15;
+  
+  if (type === "steady") {
+    const points = Array.from({ length: 10 }, (_, i) => {
+      const x = (i / 9) * width;
+      const y = baseY - 20 - (i * 1.5);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
+        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">稳定增长</text>
+      </svg>
+    );
+  } else {
+    const points = Array.from({ length: 10 }, (_, i) => {
+      const x = (i / 9) * width;
+      const y = baseY - (Math.sin(i * 1.2) * 25 + 15);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2" />
+        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">波动较大</text>
+      </svg>
+    );
+  }
+}
+
+function ProbabilityDiagram({ frame = "gain", option = "A" }) {
+  const width = 140, height = 100;
+  
+  if (option === "A") {
+    // Sure thing
+    const value = frame === "gain" ? "+4%" : "-4%";
+    const color = frame === "gain" ? "#22c55e" : "#ef4444";
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <rect x="20" y="30" width="100" height="40" fill={color} opacity="0.2" stroke={color} strokeWidth="2" rx="4" />
+        <text x={width / 2} y={height / 2 + 5} textAnchor="middle" fontSize="16" fill={color} fontWeight="600">
+          {value}
+        </text>
+        <text x={width / 2} y={height / 2 + 20} textAnchor="middle" fontSize="10" fill="#666">
+          确定
+        </text>
+      </svg>
+    );
+  } else {
+    // 50/50 chance
+    const high = frame === "gain" ? "+10%" : "-10%";
+    const low = "0%";
+    const highColor = frame === "gain" ? "#22c55e" : "#ef4444";
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <rect x="10" y="20" width="55" height="35" fill={highColor} opacity="0.2" stroke={highColor} strokeWidth="2" rx="4" />
+        <rect x="75" y="20" width="55" height="35" fill="#94a3b8" opacity="0.2" stroke="#94a3b8" strokeWidth="2" rx="4" />
+        <text x="37.5" y="42" textAnchor="middle" fontSize="12" fill={highColor} fontWeight="600">{high}</text>
+        <text x="102.5" y="42" textAnchor="middle" fontSize="12" fill="#666" fontWeight="600">{low}</text>
+        <text x="37.5" y="65" textAnchor="middle" fontSize="9" fill="#666">50%</text>
+        <text x="102.5" y="65" textAnchor="middle" fontSize="9" fill="#666">50%</text>
+      </svg>
+    );
+  }
+}
+
+function InvestmentTrendChart({ trend = "up" }) {
+  const width = 140, height = 100;
+  const baseY = height - 15;
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  if (trend === "up") {
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = (i / 11) * width;
+      const y = baseY - (i * 6 + pseudoRandom(i) * 3);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
+        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">上涨趋势</text>
+      </svg>
+    );
+  } else {
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = (i / 11) * width;
+      const y = 20 + (i * 6 + pseudoRandom(i) * 3);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
+        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">下跌趋势</text>
+      </svg>
+    );
+  }
+}
+
+function MarketSwingChart() {
+  const width = 300, height = 120;
+  const baseY = height - 20;
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  const points = Array.from({ length: 20 }, (_, i) => {
+    const x = (i / 19) * width;
+    const y = baseY - (Math.sin(i * 0.6) * 40 + pseudoRandom(i) * 15 - 7.5);
+    return `${x},${y}`;
+  }).join(" ");
+  
+  return (
+    <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
+      <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2" />
+      <line x1="0" y1={baseY} x2={width} y2={baseY} stroke="#666" strokeWidth="1" />
+      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">
+        市场波动
+      </text>
+    </svg>
+  );
+}
+
+function ProfitLossChart({ scenario = "profit" }) {
+  const width = 140, height = 100;
+  const baseY = height - 15;
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  if (scenario === "profit") {
+    // Stock rises after selling
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = (i / 11) * width;
+      const y = baseY - (i < 6 ? i * 3 : i * 8);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
+        <line x1={width * 0.5} y1="0" x2={width * 0.5} y2={height} stroke="#ef4444" strokeWidth="1" strokeDasharray="4,4" />
+        <text x={width * 0.5} y={height - 2} textAnchor="middle" fontSize="8" fill="#ef4444">卖出点</text>
+        <text x={width / 2} y="12" textAnchor="middle" fontSize="9" fill="#666">继续上涨</text>
+      </svg>
+    );
+  } else {
+    // Loss scenario
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = (i / 11) * width;
+      const y = 20 + (i * 5);
+      return `${x},${y}`;
+    }).join(" ");
+    return (
+      <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
+        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
+        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">持续下跌</text>
+      </svg>
+    );
+  }
+}
+
+function RiskReturnComparison() {
+  const width = 300, height = 120;
+  return (
+    <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
+      <line x1="40" y1={height - 20} x2="260" y2="20" stroke="#22c55e" strokeWidth="2" />
+      <circle cx="150" cy="70" r="4" fill="#22c55e" />
+      <text x="150" y="65" textAnchor="middle" fontSize="10" fill="#666">高风险高回报</text>
+      <line x1="40" y1={height - 20} x2="180" y2={height - 40} stroke="#94a3b8" strokeWidth="2" />
+      <circle cx="110" cy={height - 30} r="4" fill="#94a3b8" />
+      <text x="110" y={height - 35} textAnchor="middle" fontSize="10" fill="#666">低风险低回报</text>
+      <text x="20" y={height / 2} textAnchor="middle" fontSize="10" fill="#666" transform={`rotate(-90, 20, ${height / 2})`}>
+        回报
+      </text>
+      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">风险</text>
+    </svg>
+  );
+}
+
 /**
  * Scoring:
  * - Key item: right-pole = 80, left-pole = 20
@@ -79,7 +313,8 @@ const QUESTIONS = [
     text: "Imagine an investment that offers higher return potential but with larger losses possible in a given year. Would you accept it or prefer a safer alternative?",
     A: "Accept higher potential losses", B: "Choose safer option",
     dimension: "CapacityConstraint",
-    cap: (opt)=>({ ConsistencyCheck: opt==="A" ? "Aggressive":"Conservative" }) },
+    cap: (opt)=>({ ConsistencyCheck: opt==="A" ? "Aggressive":"Conservative" }),
+    visual: { type: "RiskReturnComparison", props: {} } },
   { code: "1.7", section: "Situation & Goals",
     text: "Suppose your annual income and net worth are limited. Would you still invest aggressively or remain conservative?",
     A: "Invest aggressively", B: "Remain conservative",
@@ -104,15 +339,18 @@ const QUESTIONS = [
   { code: "2.1", section: "Risk Tolerance",
     text: "If your portfolio dropped 25% in three months, would you sell part to reduce losses or hold through volatility?",
     A: "Sell part", B: "Hold through volatility",
-    dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B" },
+    dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B",
+    visual: { type: "PortfolioDropChart", props: { dropPercent: 25 } } },
   { code: "2.2", section: "Risk Tolerance",
     text: "If markets became volatile but with potential for higher returns, would you stay invested or reduce exposure?",
     A: "Stay invested", B: "Reduce exposure",
-    dimension: "RiskTolerance_Willingness", isKey:false, weight:1, high:"A" },
+    dimension: "RiskTolerance_Willingness", isKey:false, weight:1, high:"A",
+    visual: { type: "VolatilityChart", props: { type: "volatile" } } },
   { code: "2.3", section: "Risk Tolerance",
     text: "Imagine choosing between an investment with small steady gains and one with higher ups and downs. Which would you choose?",
     A: "Small steady gains", B: "Higher ups and downs",
-    dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B" },
+    dimension: "RiskTolerance_Willingness", isKey:true, weight:1, high:"B",
+    visualComparison: { A: { type: "ComparisonCharts", props: { type: "steady" } }, B: { type: "ComparisonCharts", props: { type: "volatile" } } } },
   { code: "2.4", section: "Risk Tolerance",
     text: "Would you feel comfortable with returns that differ greatly from the market index, or prefer to track the index closely?",
     A: "Comfortable with deviations", B: "Track the index closely",
@@ -122,17 +360,20 @@ const QUESTIONS = [
   { code: "2.5", section: "Risk Tolerance",
     text: "Gain frame: choose between a sure +4% or a 50% chance of +10% and 50% of 0%.",
     A: "Sure +4%", B: "50% chance +10% / 50% 0%",
-    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B",
+    visualComparison: { A: { type: "ProbabilityDiagram", props: { frame: "gain", option: "A" } }, B: { type: "ProbabilityDiagram", props: { frame: "gain", option: "B" } } } },
   { code: "2.6", section: "Risk Tolerance",
     text: "Loss frame: choose between a sure −4% or a 50% chance of −10% and 50% of 0%.",
     A: "Sure −4%", B: "50% chance −10% / 50% 0%",
-    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B" },
+    dimension: "RiskTolerance_Willingness", isKey: false, weight: 1, high: "B",
+    visualComparison: { A: { type: "ProbabilityDiagram", props: { frame: "loss", option: "A" } }, B: { type: "ProbabilityDiagram", props: { frame: "loss", option: "B" } } } },
 
   // ===== 3. Age & Experience =====
   { code: "3.1", section: "Age & Experience",
     text: "When markets swing sharply, do you usually stay calm or feel anxious about potential losses?",
     A: "Stay calm", B: "Feel anxious",
-    dimension: "BehavioralControl", isKey:false, weight:1, high:"A" },
+    dimension: "BehavioralControl", isKey:false, weight:1, high:"A",
+    visual: { type: "MarketSwingChart", props: {} } },
   { code: "3.2", section: "Age & Experience",
     text: "Would you describe yourself as having long investing experience or being relatively new to it?",
     A: "Experienced", B: "New",
@@ -154,11 +395,13 @@ const QUESTIONS = [
   { code: "4.1", section: "Behavioral & Psychological",
     text: "When markets drop suddenly, do you check your investments frequently or avoid looking for a while?",
     A: "Check frequently", B: "Avoid looking",
-    dimension: "BehavioralControl", isKey:false, weight:1, high:"B" },
+    dimension: "BehavioralControl", isKey:false, weight:1, high:"B",
+    visual: { type: "PortfolioDropChart", props: { dropPercent: 20 } } },
   { code: "4.2", section: "Behavioral & Psychological",
     text: "If you sell a stock and it rises afterward, do you tend to regret the decision or move on quickly?",
     A: "Regret", B: "Move on quickly",
-    dimension: "BehavioralControl", isKey:false, weight:1, high:"B" },
+    dimension: "BehavioralControl", isKey:false, weight:1, high:"B",
+    visual: { type: "ProfitLossChart", props: { scenario: "profit" } } },
   { code: "4.3", section: "Behavioral & Psychological",
     text: "Would you describe yourself as enjoying trading activity or preferring a long-term hands-off approach?",
     A: "Enjoy trading", B: "Hands-off approach",
@@ -174,11 +417,13 @@ const QUESTIONS = [
   { code: "4.6", section: "Behavioral & Psychological",
     text: "After a profitable period, would you rather take profits quickly or let winners run longer?",
     A: "Take profits quickly", B: "Let winners run",
-    dimension: "BehavioralControl", isKey:false, weight:1, high:"B" },
+    dimension: "BehavioralControl", isKey:false, weight:1, high:"B",
+    visualComparison: { A: { type: "InvestmentTrendChart", props: { trend: "up" } }, B: { type: "InvestmentTrendChart", props: { trend: "up" } } } },
   { code: "4.7", section: "Behavioral & Psychological",
     text: "After losses, would you prefer to hold losers or sell quickly to move on?",
     A: "Hold losers", B: "Sell quickly",
-    dimension: "BehavioralControl", isKey:false, weight:1, high:"B" },
+    dimension: "BehavioralControl", isKey:false, weight:1, high:"B",
+    visual: { type: "ProfitLossChart", props: { scenario: "loss" } } },
   { code: "4.8", section: "Behavioral & Psychological",
     text: "What is the largest one-year loss you could tolerate before reconsidering your plan — small or large?",
     A: "Small loss tolerance", B: "Large loss tolerance",
@@ -327,13 +572,32 @@ const S = {
   descText: { fontSize:14, lineHeight:1.5, color: theme.text },
 };
 
-function Radio({name,label,checked,onChange,desc}) {
+// Helper function to render visual components
+function renderVisual(config) {
+  if (!config) return null;
+  const { type, props = {} } = config;
+  const components = {
+    PortfolioDropChart,
+    VolatilityChart,
+    ComparisonCharts,
+    ProbabilityDiagram,
+    InvestmentTrendChart,
+    MarketSwingChart,
+    ProfitLossChart,
+    RiskReturnComparison,
+  };
+  const Component = components[type];
+  return Component ? <Component {...props} /> : null;
+}
+
+function Radio({name,label,checked,onChange,desc,visual}) {
   return (
     <label style={S.radio(checked===label)}>
       <input type="radio" name={name} value={label} checked={checked===label} onChange={(e)=>onChange(e.target.value)} style={{marginTop:2}} />
-      <div>
+      <div style={{width:"100%"}}>
         <div style={S.small}>Option {label}</div>
         <div style={{fontSize:14, lineHeight:1.35}}>{desc}</div>
+        {visual && <div style={{marginTop:8}}>{renderVisual(visual)}</div>}
       </div>
     </label>
   );
@@ -344,9 +608,24 @@ function QuestionCard({q, value, set}) {
     <div style={S.card}>
       <div style={S.code}>{q.section} · {q.code} · {q.dimension}{q.isKey ? " · Key": ""}</div>
       <div style={S.qtext}>{q.text}</div>
+      {q.visual && <div style={{marginBottom:12}}>{renderVisual(q.visual)}</div>}
       <div style={S.twoCols}>
-        <Radio name={q.code} label="A" checked={value} onChange={(v)=>set(q.code,v)} desc={q.A}/>
-        <Radio name={q.code} label="B" checked={value} onChange={(v)=>set(q.code,v)} desc={q.B}/>
+        <Radio 
+          name={q.code} 
+          label="A" 
+          checked={value} 
+          onChange={(v)=>set(q.code,v)} 
+          desc={q.A}
+          visual={q.visualComparison?.A}
+        />
+        <Radio 
+          name={q.code} 
+          label="B" 
+          checked={value} 
+          onChange={(v)=>set(q.code,v)} 
+          desc={q.B}
+          visual={q.visualComparison?.B}
+        />
       </div>
     </div>
   );
