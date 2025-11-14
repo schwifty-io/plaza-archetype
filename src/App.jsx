@@ -9,13 +9,13 @@ function PortfolioDropChart({ dropPercent = 25 }) {
   const chartHeight = height - padding.top - padding.bottom;
   const baseY = padding.top + chartHeight;
   
-  // Generate smooth decline curve
+  // Generate smooth decline curve - line goes DOWN (loss increases downward)
   const points = Array.from({ length: 13 }, (_, i) => {
     const x = padding.left + (i / 12) * chartWidth;
     const progress = i / 12;
-    // Smooth decline accelerating at the end
+    // Smooth decline accelerating at the end - loss increases as we go down
     const dropFactor = progress < 0.7 ? progress * 0.5 : 0.35 + (progress - 0.7) * 2.17;
-    const y = baseY - (dropFactor * chartHeight * 0.8);
+    const y = padding.top + (dropFactor * chartHeight * 0.8);
     return `${x},${y}`;
   }).join(" ");
   
@@ -35,23 +35,28 @@ function PortfolioDropChart({ dropPercent = 25 }) {
       {/* X-axis */}
       <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
       
-      {/* Y-axis labels */}
+      {/* Y-axis labels - Loss increases downward */}
       {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
         const y = padding.top + ratio * chartHeight;
-        const value = Math.round((1 - ratio) * dropPercent);
+        const value = Math.round(ratio * dropPercent);
         return (
           <g key={i}>
             <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
             <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
-              -{value}%
+              {value}%
             </text>
           </g>
         );
       })}
       
+      {/* Y-axis title */}
+      <text x="15" y={height / 2} textAnchor="middle" fontSize="10" fill="#374151" fontWeight="600" transform={`rotate(-90, 15, ${height / 2})`}>
+        Loss
+      </text>
+      
       {/* X-axis labels */}
       <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
-        Time (3 months)
+        Time
       </text>
       
       {/* Chart line */}
@@ -59,7 +64,7 @@ function PortfolioDropChart({ dropPercent = 25 }) {
       
       {/* Title */}
       <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
-        Portfolio Value Decline
+        Portfolio Loss Over Time
       </text>
     </svg>
   );
@@ -77,20 +82,54 @@ function VolatilityChart({ type = "volatile" }) {
     return x - Math.floor(x);
   };
   
-  const points = type === "volatile" 
-    ? Array.from({ length: 20 }, (_, i) => {
-        const x = padding.left + (i / 19) * chartWidth;
-        const volatility = Math.sin(i * 0.5) * 0.6 + Math.sin(i * 1.2) * 0.3;
-        const random = (pseudoRandom(i) - 0.5) * 0.4;
-        const y = baseY - (volatility + random) * (chartHeight * 0.4);
-        return `${x},${y}`;
-      }).join(" ")
-    : Array.from({ length: 20 }, (_, i) => {
-        const x = padding.left + (i / 19) * chartWidth;
-        const y = baseY - (i * 0.15);
-        return `${x},${y}`;
-      }).join(" ");
+  const numPoints = 28;
+  let lastY = baseY;
+  const yValues = [];
   
+  if (type === "volatile") {
+    // More realistic volatile market with clusters of volatility
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
+      
+      // Create volatility clusters (like real market stress periods)
+      const cluster1 = progress > 0.2 && progress < 0.35 ? 1.2 : 1.0;
+      const cluster2 = progress > 0.6 && progress < 0.75 ? 1.3 : 1.0;
+      const volatilityMultiplier = cluster1 * cluster2;
+      
+      // Multiple frequency components for realistic market behavior
+      const wave1 = Math.sin(i * 0.4) * 0.4;
+      const wave2 = Math.sin(i * 0.9) * 0.25;
+      const wave3 = Math.sin(i * 1.6) * 0.15;
+      const random = (pseudoRandom(i) - 0.5) * 0.3;
+      
+      // Momentum effect - current movement influenced by previous
+      const momentum = (lastY - baseY) / (chartHeight * 0.4) * 0.15;
+      
+      const fluctuation = (wave1 + wave2 + wave3 + random + momentum) * volatilityMultiplier;
+      const y = baseY - fluctuation * (chartHeight * 0.4);
+      lastY = y;
+      yValues.push({ x, y });
+    }
+  } else {
+    // Stable market with gentle upward trend and minimal volatility
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
+      
+      // Gentle upward trend
+      const trend = progress * 0.4;
+      // Very small fluctuations
+      const wave = Math.sin(i * 0.3) * 0.08;
+      const random = (pseudoRandom(i) - 0.5) * 0.05;
+      
+      const y = baseY - (trend + wave + random) * (chartHeight * 0.4);
+      lastY = y;
+      yValues.push({ x, y });
+    }
+  }
+  
+  const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
   const color = type === "volatile" ? "#f59e0b" : "#22c55e";
   
   return (
@@ -137,13 +176,36 @@ function ComparisonCharts({ type = "steady" }) {
   const chartHeight = height - padding.top - padding.bottom;
   const baseY = padding.top + chartHeight;
   
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  
   if (type === "steady") {
-    const points = Array.from({ length: 12 }, (_, i) => {
-      const x = padding.left + (i / 11) * chartWidth;
-      const progress = i / 11;
-      const y = baseY - (progress * chartHeight * 0.7);
-      return `${x},${y}`;
-    }).join(" ");
+    // Steady growth with small, realistic fluctuations
+    const numPoints = 16;
+    let lastY = baseY;
+    const yValues = [];
+    
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
+      
+      // Steady upward trend
+      const trend = progress * 0.65;
+      // Small realistic fluctuations
+      const wave = Math.sin(i * 0.4) * 0.08;
+      const random = (pseudoRandom(i) - 0.5) * 0.06;
+      // Smooth momentum
+      const momentum = (lastY - baseY) / (chartHeight * 0.7) * 0.1;
+      
+      const y = baseY - (trend + wave + random + momentum) * (chartHeight * 0.7);
+      lastY = y;
+      yValues.push({ x, y });
+    }
+    
+    const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
+    
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
         {/* Grid */}
@@ -168,17 +230,35 @@ function ComparisonCharts({ type = "steady" }) {
       </svg>
     );
   } else {
-    const pseudoRandom = (seed) => {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    };
-    const points = Array.from({ length: 12 }, (_, i) => {
-      const x = padding.left + (i / 11) * chartWidth;
-      const volatility = Math.sin(i * 0.8) * 0.5 + Math.sin(i * 1.5) * 0.3;
-      const random = (pseudoRandom(i) - 0.5) * 0.3;
-      const y = baseY - (volatility + random + 0.2) * chartHeight * 0.6;
-      return `${x},${y}`;
-    }).join(" ");
+    // High volatility with dramatic swings
+    const numPoints = 16;
+    let lastY = baseY;
+    const yValues = [];
+    
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
+      
+      // Multiple volatility waves
+      const wave1 = Math.sin(i * 0.7) * 0.4;
+      const wave2 = Math.sin(i * 1.3) * 0.25;
+      const wave3 = Math.sin(i * 2.1) * 0.15;
+      const random = (pseudoRandom(i) - 0.5) * 0.25;
+      
+      // Strong momentum effects (overshooting)
+      const momentum = (lastY - baseY) / (chartHeight * 0.6) * 0.2;
+      
+      // Overall slight upward bias but with huge swings
+      const slightTrend = progress * 0.15;
+      
+      const fluctuation = wave1 + wave2 + wave3 + random + momentum + slightTrend;
+      const y = baseY - fluctuation * (chartHeight * 0.6);
+      lastY = y;
+      yValues.push({ x, y });
+    }
+    
+    const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
+    
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
         {/* Grid */}
@@ -336,14 +416,39 @@ function MarketSwingChart() {
     return x - Math.floor(x);
   };
   
-  const points = Array.from({ length: 24 }, (_, i) => {
-    const x = padding.left + (i / 23) * chartWidth;
-    const swing1 = Math.sin(i * 0.4) * 0.5;
-    const swing2 = Math.sin(i * 0.9) * 0.3;
-    const random = (pseudoRandom(i) - 0.5) * 0.2;
-    const y = baseY - (swing1 + swing2 + random) * (chartHeight * 0.45);
-    return `${x},${y}`;
-  }).join(" ");
+  // Create dramatic market swings with realistic behavior
+  const numPoints = 30;
+  let lastY = baseY;
+  const yValues = [];
+  
+  for (let i = 0; i < numPoints; i++) {
+    const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+    const progress = i / (numPoints - 1);
+    
+    // Create periods of high volatility (like news events or panic selling)
+    const volatilityPeriod1 = progress > 0.15 && progress < 0.3 ? 1.4 : 1.0;
+    const volatilityPeriod2 = progress > 0.55 && progress < 0.7 ? 1.5 : 1.0;
+    const volatilityMultiplier = volatilityPeriod1 * volatilityPeriod2;
+    
+    // Multiple frequency components for sharp swings
+    const swing1 = Math.sin(i * 0.5) * 0.5;
+    const swing2 = Math.sin(i * 0.9) * 0.35;
+    const swing3 = Math.sin(i * 1.4) * 0.2;
+    const random = (pseudoRandom(i) - 0.5) * 0.25;
+    
+    // Strong momentum - markets overshoot then correct
+    const momentum = (lastY - baseY) / (chartHeight * 0.45) * 0.25;
+    
+    // Occasional sharp spikes (flash crashes or rallies)
+    const spike = progress > 0.4 && progress < 0.45 ? (pseudoRandom(i) - 0.5) * 0.4 : 0;
+    
+    const fluctuation = (swing1 + swing2 + swing3 + random + momentum + spike) * volatilityMultiplier;
+    const y = baseY - fluctuation * (chartHeight * 0.45);
+    lastY = y;
+    yValues.push({ x, y });
+  }
+  
+  const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
   
   return (
     <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
@@ -382,6 +487,105 @@ function MarketSwingChart() {
   );
 }
 
+function ProfitablePeriodChart() {
+  const width = 320, height = 160;
+  const padding = { top: 20, right: 30, bottom: 35, left: 45 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight / 2;
+  
+  const pseudoRandom = (seed) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  // Generate realistic stock price with no clear trend for first 3/4, then upward trend in last 1/4
+  const numPoints = 32;
+  const transitionPoint = Math.floor(numPoints * 0.75);
+  
+  // Calculate Y values for all points
+  const yValues = [];
+  let lastY = baseY; // Track last Y position for smooth transition
+  
+  for (let i = 0; i < numPoints; i++) {
+    const progress = i / (numPoints - 1);
+    let y;
+    
+    if (i < transitionPoint) {
+      // First 3/4: realistic fluctuations with no clear trend
+      // Use multiple sine waves for realistic market behavior
+      const wave1 = Math.sin(i * 0.25) * 0.12;
+      const wave2 = Math.sin(i * 0.6) * 0.08;
+      const wave3 = Math.sin(i * 1.1) * 0.05;
+      const random = (pseudoRandom(i) - 0.5) * 0.15;
+      // Very slight overall drift (almost flat)
+      const drift = (progress - 0.375) * 0.05;
+      const fluctuation = wave1 + wave2 + wave3 + random + drift;
+      y = baseY - fluctuation * (chartHeight * 0.3);
+      lastY = y; // Update for smooth transition
+    } else {
+      // Last 1/4: clear upward trend
+      const upwardProgress = (i - transitionPoint) / (numPoints - 1 - transitionPoint); // 0 to 1 in last quarter
+      // Strong upward movement with easing
+      const upwardTrend = upwardProgress * upwardProgress * 0.7; // Easing for more natural look
+      // Some volatility but decreasing as trend continues
+      const volatility = Math.sin(i * 0.8) * 0.08 * (1 - upwardProgress * 0.6);
+      const random = (pseudoRandom(i) - 0.5) * 0.1 * (1 - upwardProgress * 0.5);
+      // Start from last position and add upward movement
+      y = lastY - (upwardTrend + volatility + random) * (chartHeight * 0.45);
+    }
+    
+    yValues.push(y);
+  }
+  
+  // Generate points string
+  const points = yValues.map((y, i) => {
+    const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+    return `${x},${y}`;
+  }).join(" ");
+  
+  return (
+    <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
+      {/* Grid lines */}
+      {[-1, -0.5, 0, 0.5, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.4);
+        return (
+          <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+        );
+      })}
+      
+      {/* Y-axis */}
+      <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#374151" strokeWidth="1.5" />
+      {/* X-axis */}
+      <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+      
+      {/* Mark the transition point (75%) - subtle indicator */}
+      <line x1={padding.left + 0.75 * chartWidth} y1={padding.top} 
+            x2={padding.left + 0.75 * chartWidth} y2={padding.top + chartHeight} 
+            stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" opacity="0.4" />
+      
+      {/* Y-axis labels */}
+      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
+      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
+      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      
+      {/* X-axis label */}
+      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
+        Time
+      </text>
+      
+      {/* Chart line */}
+      <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Title */}
+      <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
+        Stock Price Movement
+      </text>
+    </svg>
+  );
+}
+
 function ProfitLossChart({ scenario = "profit" }) {
   const width = 150, height = 120;
   const padding = { top: 25, right: 10, bottom: 30, left: 35 };
@@ -395,17 +599,41 @@ function ProfitLossChart({ scenario = "profit" }) {
   };
   
   if (scenario === "profit") {
-    // Stock rises after selling
+    // Stock rises after selling - more realistic with fluctuations
     const sellPoint = 0.45;
-    const points = Array.from({ length: 12 }, (_, i) => {
-      const x = padding.left + (i / 11) * chartWidth;
-      const progress = i / 11;
+    const numPoints = 18;
+    let lastY = baseY;
+    const yValues = [];
+    
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
       const beforeSell = progress < sellPoint;
-      const y = baseY - (beforeSell 
-        ? progress * chartHeight * 0.4 
-        : sellPoint * chartHeight * 0.4 + (progress - sellPoint) * chartHeight * 0.5);
-      return `${x},${y}`;
-    }).join(" ");
+      
+      let y;
+      if (beforeSell) {
+        // Before selling: gradual rise with small fluctuations
+        const trend = progress * 0.35;
+        const wave = Math.sin(i * 0.4) * 0.06;
+        const random = (pseudoRandom(i) - 0.5) * 0.05;
+        const momentum = (lastY - baseY) / (chartHeight * 0.4) * 0.08;
+        y = baseY - (trend + wave + random + momentum) * (chartHeight * 0.4);
+      } else {
+        // After selling: continues rising with more volatility (regret scenario)
+        const upwardProgress = (progress - sellPoint) / (1 - sellPoint);
+        const upwardTrend = upwardProgress * upwardProgress * 0.5; // Easing upward
+        const volatility = Math.sin(i * 0.6) * 0.1;
+        const random = (pseudoRandom(i) - 0.5) * 0.08;
+        // Start from where we were at sell point
+        const sellY = baseY - (sellPoint * 0.35 + Math.sin(sellPoint * numPoints * 0.4) * 0.06) * (chartHeight * 0.4);
+        y = sellY - (upwardTrend + volatility + random) * (chartHeight * 0.5);
+      }
+      
+      lastY = y;
+      yValues.push({ x, y });
+    }
+    
+    const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
         {/* Grid */}
@@ -435,13 +663,30 @@ function ProfitLossChart({ scenario = "profit" }) {
       </svg>
     );
   } else {
-    // Loss scenario
-    const points = Array.from({ length: 12 }, (_, i) => {
-      const x = padding.left + (i / 11) * chartWidth;
-      const progress = i / 11;
-      const y = padding.top + (progress * chartHeight * 0.7);
-      return `${x},${y}`;
-    }).join(" ");
+    // Loss scenario - realistic declining pattern
+    const numPoints = 18;
+    let lastY = baseY;
+    const yValues = [];
+    
+    for (let i = 0; i < numPoints; i++) {
+      const x = padding.left + (i / (numPoints - 1)) * chartWidth;
+      const progress = i / (numPoints - 1);
+      
+      // Declining trend with some volatility
+      const decline = progress * 0.6;
+      const wave = Math.sin(i * 0.5) * 0.1;
+      const random = (pseudoRandom(i) - 0.5) * 0.08;
+      const momentum = (lastY - baseY) / (chartHeight * 0.7) * 0.12;
+      
+      // Occasional small bounces (dead cat bounce)
+      const bounce = progress > 0.3 && progress < 0.35 ? -0.05 : 0;
+      
+      const y = baseY + (decline + wave + random + momentum + bounce) * (chartHeight * 0.7);
+      lastY = y;
+      yValues.push({ x, y });
+    }
+    
+    const points = yValues.map(p => `${p.x},${p.y}`).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
         {/* Grid */}
@@ -717,7 +962,7 @@ const QUESTIONS = [
     text: "After a profitable period, would you rather take profits quickly or let winners run longer?",
     A: "Take profits quickly", B: "Let winners run",
     dimension: "BehavioralControl", isKey:false, weight:1, high:"B",
-    visualComparison: { A: { type: "InvestmentTrendChart", props: { trend: "up" } }, B: { type: "InvestmentTrendChart", props: { trend: "up" } } } },
+    visual: { type: "ProfitablePeriodChart", props: {} } },
   { code: "4.7", section: "Behavioral & Psychological",
     text: "After losses, would you prefer to hold losers or sell quickly to move on?",
     A: "Hold losers", B: "Sell quickly",
@@ -884,6 +1129,7 @@ function renderVisual(config) {
     MarketSwingChart,
     ProfitLossChart,
     RiskReturnComparison,
+    ProfitablePeriodChart,
   };
   const Component = components[type];
   return Component ? <Component {...props} /> : null;
