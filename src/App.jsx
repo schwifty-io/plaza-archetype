@@ -148,10 +148,22 @@ function VolatilityChart({ type = "volatile" }) {
       {/* X-axis */}
       <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
       
-      {/* Y-axis labels */}
-      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
-      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
-      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      {/* Y-axis labels with percentage values */}
+      {[-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.4);
+        const value = Math.round(ratio * 100);
+        if (Math.abs(value) % 25 === 0 || value === 0) { // Show 0, ±25%, ±50%, ±75%, ±100%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {value > 0 ? `+${value}%` : `${value}%`}
+              </text>
+            </g>
+          );
+        }
+        return null;
+      })}
       
       {/* X-axis label */}
       <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
@@ -224,6 +236,20 @@ function ComparisonCharts({ type = "steady" }) {
         {/* Chart line */}
         <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         
+        {/* Y-axis labels with percentage */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          const value = Math.round(ratio * 100);
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                +{value}%
+              </text>
+            </g>
+          );
+        })}
+        
         {/* Labels */}
         <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
         <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Steady Growth</text>
@@ -276,6 +302,20 @@ function ComparisonCharts({ type = "steady" }) {
         
         {/* Chart line */}
         <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Y-axis labels with percentage */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          const value = Math.round((ratio - 0.5) * 200); // -100% to +100%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {value > 0 ? `+${value}%` : `${value}%`}
+              </text>
+            </g>
+          );
+        })}
         
         {/* Labels */}
         <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
@@ -365,6 +405,20 @@ function InvestmentTrendChart({ trend = "up" }) {
         {/* Chart line */}
         <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         
+        {/* Y-axis labels with percentage */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          const value = Math.round(ratio * 100);
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                +{value}%
+              </text>
+            </g>
+          );
+        })}
+        
         {/* Labels */}
         <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
         <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Upward Trend</text>
@@ -395,6 +449,20 @@ function InvestmentTrendChart({ trend = "up" }) {
         
         {/* Chart line */}
         <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Y-axis labels with percentage */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          const value = Math.round((1 - ratio) * 100); // 100% to 0%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {value}%
+              </text>
+            </g>
+          );
+        })}
         
         {/* Labels */}
         <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
@@ -466,10 +534,22 @@ function MarketSwingChart() {
       {/* X-axis */}
       <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
       
-      {/* Y-axis labels */}
-      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
-      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
-      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      {/* Y-axis labels with percentage values */}
+      {[-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.45);
+        const value = Math.round(ratio * 100);
+        if (Math.abs(value) % 25 === 0 || value === 0) { // Show 0, ±25%, ±50%, ±75%, ±100%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {value > 0 ? `+${value}%` : `${value}%`}
+              </text>
+            </g>
+          );
+        }
+        return null;
+      })}
       
       {/* X-axis label */}
       <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
@@ -565,10 +645,22 @@ function ProfitablePeriodChart() {
             x2={padding.left + 0.75 * chartWidth} y2={padding.top + chartHeight} 
             stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" opacity="0.4" />
       
-      {/* Y-axis labels */}
-      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
-      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
-      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      {/* Y-axis labels with percentage values */}
+      {[-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.4);
+        const value = Math.round(ratio * 100);
+        if (Math.abs(value) % 25 === 0 || value === 0) { // Show 0, ±25%, ±50%, ±75%, ±100%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                {value > 0 ? `+${value}%` : `${value}%`}
+              </text>
+            </g>
+          );
+        }
+        return null;
+      })}
       
       {/* X-axis label */}
       <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
@@ -648,6 +740,20 @@ function ProfitLossChart({ scenario = "profit" }) {
         {/* Axes */}
         <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
         <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Y-axis labels with percentage */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+          const y = baseY - ratio * (chartHeight * 0.5);
+          const value = Math.round(ratio * 50); // 0% to +50%
+          return (
+            <g key={i}>
+              <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+                +{value}%
+              </text>
+            </g>
+          );
+        })}
         
         {/* Sell point marker */}
         <line x1={padding.left + sellPoint * chartWidth} y1={padding.top} 
@@ -761,20 +867,42 @@ function RiskReturnComparison() {
       <line x1={originX} y1={originY} x2={width - padding.right} y2={originY} stroke="#374151" strokeWidth="2" />
       <line x1={originX} y1={originY} x2={originX} y2={padding.top} stroke="#374151" strokeWidth="2" />
       
-      {/* Axis labels */}
-      <text x={originX - 8} y={padding.top + 4} textAnchor="end" fontSize="10" fill="#6b7280" fontWeight="600">High</text>
-      <text x={originX - 8} y={originY + 4} textAnchor="end" fontSize="10" fill="#6b7280" fontWeight="600">Low</text>
-      <text x={width - padding.right + 8} y={originY + 4} textAnchor="start" fontSize="10" fill="#6b7280" fontWeight="600">High</text>
-      <text x={originX + 8} y={originY + 4} textAnchor="start" fontSize="10" fill="#6b7280" fontWeight="600">Low</text>
+      {/* Y-axis labels with percentage values */}
+      {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = originY - ratio * chartHeight;
+        const returnValue = Math.round(ratio * 100);
+        return (
+          <g key={`y-${i}`}>
+            <line x1={originX - 5} y1={y} x2={originX} y2={y} stroke="#374151" strokeWidth="1" />
+            <text x={originX - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+              {returnValue}%
+            </text>
+          </g>
+        );
+      })}
+      
+      {/* X-axis labels with percentage values */}
+      {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const x = originX + ratio * chartWidth;
+        const riskValue = Math.round(ratio * 100);
+        return (
+          <g key={`x-${i}`}>
+            <line x1={x} y1={originY} x2={x} y2={originY + 5} stroke="#374151" strokeWidth="1" />
+            <text x={x} y={originY + 18} textAnchor="middle" fontSize="9" fill="#6b7280">
+              {riskValue}%
+            </text>
+          </g>
+        );
+      })}
       
       {/* Y-axis label */}
       <text x="15" y={height / 2} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600" transform={`rotate(-90, 15, ${height / 2})`}>
-        Return
+        Return (%)
       </text>
       
       {/* X-axis label */}
       <text x={width / 2} y={height - 12} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600">
-        Risk
+        Risk (%)
       </text>
       
       {/* High risk/return line */}
