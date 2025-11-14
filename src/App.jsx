@@ -3,88 +3,210 @@ import React, { useMemo, useState } from "react";
 
 // ===== Visualization Components =====
 function PortfolioDropChart({ dropPercent = 25 }) {
-  const width = 300, height = 120;
-  const points = Array.from({ length: 12 }, (_, i) => {
-    const x = (i / 11) * width;
-    const y = i < 9 ? height - 20 - (i * 8) : height - 20 - (9 * 8) - ((i - 9) * 25);
+  const width = 320, height = 160;
+  const padding = { top: 20, right: 30, bottom: 35, left: 45 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight;
+  
+  // Generate smooth decline curve
+  const points = Array.from({ length: 13 }, (_, i) => {
+    const x = padding.left + (i / 12) * chartWidth;
+    const progress = i / 12;
+    // Smooth decline accelerating at the end
+    const dropFactor = progress < 0.7 ? progress * 0.5 : 0.35 + (progress - 0.7) * 2.17;
+    const y = baseY - (dropFactor * chartHeight * 0.8);
     return `${x},${y}`;
   }).join(" ");
   
   return (
     <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
-      <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
-      <line x1="0" y1={height - 20} x2={width} y2={height - 20} stroke="#666" strokeWidth="1" />
-      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">
-        3 months
+      {/* Grid lines */}
+      {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = padding.top + ratio * chartHeight;
+        return (
+          <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+        );
+      })}
+      
+      {/* Y-axis */}
+      <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+      {/* X-axis */}
+      <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+      
+      {/* Y-axis labels */}
+      {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const y = padding.top + ratio * chartHeight;
+        const value = Math.round((1 - ratio) * dropPercent);
+        return (
+          <g key={i}>
+            <line x1={padding.left - 5} y1={y} x2={padding.left} y2={y} stroke="#374151" strokeWidth="1" />
+            <text x={padding.left - 8} y={y + 4} textAnchor="end" fontSize="9" fill="#6b7280">
+              -{value}%
+            </text>
+          </g>
+        );
+      })}
+      
+      {/* X-axis labels */}
+      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
+        Time (3 months)
       </text>
-      <text x="5" y="15" fontSize="11" fill="#ef4444" fontWeight="600">
-        -{dropPercent}%
+      
+      {/* Chart line */}
+      <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Title */}
+      <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
+        Portfolio Value Decline
       </text>
     </svg>
   );
 }
 
 function VolatilityChart({ type = "volatile" }) {
-  const width = 300, height = 120;
-  const baseY = height - 20;
-  // Use deterministic pseudo-random values based on index
+  const width = 320, height = 160;
+  const padding = { top: 20, right: 30, bottom: 35, left: 45 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight / 2;
+  
   const pseudoRandom = (seed) => {
     const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
   };
+  
   const points = type === "volatile" 
-    ? Array.from({ length: 15 }, (_, i) => {
-        const x = (i / 14) * width;
-        const y = baseY - (Math.sin(i * 0.8) * 30 + pseudoRandom(i) * 20 - 10);
+    ? Array.from({ length: 20 }, (_, i) => {
+        const x = padding.left + (i / 19) * chartWidth;
+        const volatility = Math.sin(i * 0.5) * 0.6 + Math.sin(i * 1.2) * 0.3;
+        const random = (pseudoRandom(i) - 0.5) * 0.4;
+        const y = baseY - (volatility + random) * (chartHeight * 0.4);
         return `${x},${y}`;
       }).join(" ")
-    : Array.from({ length: 15 }, (_, i) => {
-        const x = (i / 14) * width;
-        const y = baseY - 10 - (i * 2);
+    : Array.from({ length: 20 }, (_, i) => {
+        const x = padding.left + (i / 19) * chartWidth;
+        const y = baseY - (i * 0.15);
         return `${x},${y}`;
       }).join(" ");
   
+  const color = type === "volatile" ? "#f59e0b" : "#22c55e";
+  
   return (
     <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
-      <polyline points={points} fill="none" stroke={type === "volatile" ? "#f59e0b" : "#22c55e"} strokeWidth="2" />
-      <line x1="0" y1={baseY} x2={width} y2={baseY} stroke="#666" strokeWidth="1" />
+      {/* Grid lines */}
+      {[-1, -0.5, 0, 0.5, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.4);
+        return (
+          <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+        );
+      })}
+      
+      {/* Y-axis */}
+      <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#374151" strokeWidth="1.5" />
+      {/* X-axis */}
+      <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+      
+      {/* Y-axis labels */}
+      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
+      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
+      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      
+      {/* X-axis label */}
+      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
+        Time
+      </text>
+      
+      {/* Chart line */}
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Title */}
+      <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
+        {type === "volatile" ? "High Volatility Market" : "Stable Market"}
+      </text>
     </svg>
   );
 }
 
 function ComparisonCharts({ type = "steady" }) {
-  const width = 140, height = 100;
-  const baseY = height - 15;
+  const width = 150, height = 120;
+  const padding = { top: 25, right: 10, bottom: 30, left: 35 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight;
   
   if (type === "steady") {
-    const points = Array.from({ length: 10 }, (_, i) => {
-      const x = (i / 9) * width;
-      const y = baseY - 20 - (i * 1.5);
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = padding.left + (i / 11) * chartWidth;
+      const progress = i / 11;
+      const y = baseY - (progress * chartHeight * 0.7);
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
-        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">稳定增长</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Steady Growth</text>
       </svg>
     );
   } else {
-    const points = Array.from({ length: 10 }, (_, i) => {
-      const x = (i / 9) * width;
-      const y = baseY - (Math.sin(i * 1.2) * 25 + 15);
+    const pseudoRandom = (seed) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+    const points = Array.from({ length: 12 }, (_, i) => {
+      const x = padding.left + (i / 11) * chartWidth;
+      const volatility = Math.sin(i * 0.8) * 0.5 + Math.sin(i * 1.5) * 0.3;
+      const random = (pseudoRandom(i) - 0.5) * 0.3;
+      const y = baseY - (volatility + random + 0.2) * chartHeight * 0.6;
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2" />
-        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">波动较大</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">High Volatility</text>
       </svg>
     );
   }
 }
 
 function ProbabilityDiagram({ frame = "gain", option = "A" }) {
-  const width = 140, height = 100;
+  const width = 160, height = 120;
   
   if (option === "A") {
     // Sure thing
@@ -92,12 +214,15 @@ function ProbabilityDiagram({ frame = "gain", option = "A" }) {
     const color = frame === "gain" ? "#22c55e" : "#ef4444";
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <rect x="20" y="30" width="100" height="40" fill={color} opacity="0.2" stroke={color} strokeWidth="2" rx="4" />
-        <text x={width / 2} y={height / 2 + 5} textAnchor="middle" fontSize="16" fill={color} fontWeight="600">
+        <rect x="20" y="30" width="120" height="50" fill={color} opacity="0.15" stroke={color} strokeWidth="2.5" rx="6" />
+        <text x={width / 2} y={height / 2 + 3} textAnchor="middle" fontSize="20" fill={color} fontWeight="700">
           {value}
         </text>
-        <text x={width / 2} y={height / 2 + 20} textAnchor="middle" fontSize="10" fill="#666">
-          确定
+        <text x={width / 2} y={height / 2 + 22} textAnchor="middle" fontSize="11" fill="#6b7280" fontWeight="600">
+          Certain Outcome
+        </text>
+        <text x={width / 2} y={height / 2 + 35} textAnchor="middle" fontSize="10" fill="#9ca3af">
+          100% Probability
         </text>
       </svg>
     );
@@ -108,20 +233,27 @@ function ProbabilityDiagram({ frame = "gain", option = "A" }) {
     const highColor = frame === "gain" ? "#22c55e" : "#ef4444";
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <rect x="10" y="20" width="55" height="35" fill={highColor} opacity="0.2" stroke={highColor} strokeWidth="2" rx="4" />
-        <rect x="75" y="20" width="55" height="35" fill="#94a3b8" opacity="0.2" stroke="#94a3b8" strokeWidth="2" rx="4" />
-        <text x="37.5" y="42" textAnchor="middle" fontSize="12" fill={highColor} fontWeight="600">{high}</text>
-        <text x="102.5" y="42" textAnchor="middle" fontSize="12" fill="#666" fontWeight="600">{low}</text>
-        <text x="37.5" y="65" textAnchor="middle" fontSize="9" fill="#666">50%</text>
-        <text x="102.5" y="65" textAnchor="middle" fontSize="9" fill="#666">50%</text>
+        <rect x="10" y="25" width="65" height="45" fill={highColor} opacity="0.15" stroke={highColor} strokeWidth="2.5" rx="6" />
+        <rect x="85" y="25" width="65" height="45" fill="#94a3b8" opacity="0.15" stroke="#94a3b8" strokeWidth="2.5" rx="6" />
+        <text x="42.5" y="52" textAnchor="middle" fontSize="16" fill={highColor} fontWeight="700">{high}</text>
+        <text x="117.5" y="52" textAnchor="middle" fontSize="16" fill="#6b7280" fontWeight="700">{low}</text>
+        <text x="42.5" y="68" textAnchor="middle" fontSize="11" fill="#6b7280" fontWeight="600">50%</text>
+        <text x="117.5" y="68" textAnchor="middle" fontSize="11" fill="#6b7280" fontWeight="600">50%</text>
+        <text x={width / 2} y="88" textAnchor="middle" fontSize="10" fill="#9ca3af">
+          Uncertain Outcome
+        </text>
       </svg>
     );
   }
 }
 
 function InvestmentTrendChart({ trend = "up" }) {
-  const width = 140, height = 100;
-  const baseY = height - 15;
+  const width = 150, height = 120;
+  const padding = { top: 25, right: 10, bottom: 30, left: 35 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight;
+  
   const pseudoRandom = (seed) => {
     const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
@@ -129,58 +261,134 @@ function InvestmentTrendChart({ trend = "up" }) {
   
   if (trend === "up") {
     const points = Array.from({ length: 12 }, (_, i) => {
-      const x = (i / 11) * width;
-      const y = baseY - (i * 6 + pseudoRandom(i) * 3);
+      const x = padding.left + (i / 11) * chartWidth;
+      const progress = i / 11;
+      const smooth = progress + (pseudoRandom(i) - 0.5) * 0.1;
+      const y = baseY - (smooth * chartHeight * 0.75);
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
-        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">上涨趋势</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Upward Trend</text>
       </svg>
     );
   } else {
     const points = Array.from({ length: 12 }, (_, i) => {
-      const x = (i / 11) * width;
-      const y = 20 + (i * 6 + pseudoRandom(i) * 3);
+      const x = padding.left + (i / 11) * chartWidth;
+      const progress = i / 11;
+      const smooth = progress + (pseudoRandom(i) - 0.5) * 0.1;
+      const y = padding.top + (smooth * chartHeight * 0.75);
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
-        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">下跌趋势</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Downward Trend</text>
       </svg>
     );
   }
 }
 
 function MarketSwingChart() {
-  const width = 300, height = 120;
-  const baseY = height - 20;
+  const width = 320, height = 160;
+  const padding = { top: 20, right: 30, bottom: 35, left: 45 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight / 2;
+  
   const pseudoRandom = (seed) => {
     const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
   };
-  const points = Array.from({ length: 20 }, (_, i) => {
-    const x = (i / 19) * width;
-    const y = baseY - (Math.sin(i * 0.6) * 40 + pseudoRandom(i) * 15 - 7.5);
+  
+  const points = Array.from({ length: 24 }, (_, i) => {
+    const x = padding.left + (i / 23) * chartWidth;
+    const swing1 = Math.sin(i * 0.4) * 0.5;
+    const swing2 = Math.sin(i * 0.9) * 0.3;
+    const random = (pseudoRandom(i) - 0.5) * 0.2;
+    const y = baseY - (swing1 + swing2 + random) * (chartHeight * 0.45);
     return `${x},${y}`;
   }).join(" ");
   
   return (
     <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
-      <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2" />
-      <line x1="0" y1={baseY} x2={width} y2={baseY} stroke="#666" strokeWidth="1" />
-      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">
-        市场波动
+      {/* Grid lines */}
+      {[-1, -0.5, 0, 0.5, 1].map((ratio, i) => {
+        const y = baseY - ratio * (chartHeight * 0.45);
+        return (
+          <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+        );
+      })}
+      
+      {/* Y-axis */}
+      <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#374151" strokeWidth="1.5" />
+      {/* X-axis */}
+      <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+      
+      {/* Y-axis labels */}
+      <text x={padding.left - 8} y={padding.top + 4} textAnchor="end" fontSize="9" fill="#6b7280">+</text>
+      <text x={padding.left - 8} y={baseY + 4} textAnchor="end" fontSize="9" fill="#6b7280">0</text>
+      <text x={padding.left - 8} y={padding.top + chartHeight - 4} textAnchor="end" fontSize="9" fill="#6b7280">-</text>
+      
+      {/* X-axis label */}
+      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fontSize="10" fill="#6b7280">
+        Time
+      </text>
+      
+      {/* Chart line */}
+      <polyline points={points} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Title */}
+      <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
+        Market Volatility
       </text>
     </svg>
   );
 }
 
 function ProfitLossChart({ scenario = "profit" }) {
-  const width = 140, height = 100;
-  const baseY = height - 15;
+  const width = 150, height = 120;
+  const padding = { top: 25, right: 10, bottom: 30, left: 35 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const baseY = padding.top + chartHeight;
+  
   const pseudoRandom = (seed) => {
     const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
@@ -188,49 +396,140 @@ function ProfitLossChart({ scenario = "profit" }) {
   
   if (scenario === "profit") {
     // Stock rises after selling
+    const sellPoint = 0.45;
     const points = Array.from({ length: 12 }, (_, i) => {
-      const x = (i / 11) * width;
-      const y = baseY - (i < 6 ? i * 3 : i * 8);
+      const x = padding.left + (i / 11) * chartWidth;
+      const progress = i / 11;
+      const beforeSell = progress < sellPoint;
+      const y = baseY - (beforeSell 
+        ? progress * chartHeight * 0.4 
+        : sellPoint * chartHeight * 0.4 + (progress - sellPoint) * chartHeight * 0.5);
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" />
-        <line x1={width * 0.5} y1="0" x2={width * 0.5} y2={height} stroke="#ef4444" strokeWidth="1" strokeDasharray="4,4" />
-        <text x={width * 0.5} y={height - 2} textAnchor="middle" fontSize="8" fill="#ef4444">卖出点</text>
-        <text x={width / 2} y="12" textAnchor="middle" fontSize="9" fill="#666">继续上涨</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Sell point marker */}
+        <line x1={padding.left + sellPoint * chartWidth} y1={padding.top} 
+              x2={padding.left + sellPoint * chartWidth} y2={baseY} 
+              stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,4" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={padding.left + sellPoint * chartWidth} y={height - 8} textAnchor="middle" fontSize="8" fill="#ef4444" fontWeight="600">Sell</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Continues Rising</text>
       </svg>
     );
   } else {
     // Loss scenario
     const points = Array.from({ length: 12 }, (_, i) => {
-      const x = (i / 11) * width;
-      const y = 20 + (i * 5);
+      const x = padding.left + (i / 11) * chartWidth;
+      const progress = i / 11;
+      const y = padding.top + (progress * chartHeight * 0.7);
       return `${x},${y}`;
     }).join(" ");
     return (
       <svg width={width} height={height} style={{ display: "block", margin: "4px auto" }}>
-        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2" />
-        <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="9" fill="#666">持续下跌</text>
+        {/* Grid */}
+        {[0, 0.5, 1].map((ratio, i) => {
+          const y = padding.top + ratio * chartHeight;
+          return (
+            <line key={i} x1={padding.left} y1={y} x2={width - padding.right} y2={y} 
+                  stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          );
+        })}
+        
+        {/* Axes */}
+        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        <line x1={padding.left} y1={baseY} x2={width - padding.right} y2={baseY} stroke="#374151" strokeWidth="1.5" />
+        
+        {/* Chart line */}
+        <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Labels */}
+        <text x={width / 2} y={height - 8} textAnchor="middle" fontSize="9" fill="#6b7280">Time</text>
+        <text x={width / 2} y={12} textAnchor="middle" fontSize="10" fill="#111" fontWeight="600">Continues Falling</text>
       </svg>
     );
   }
 }
 
 function RiskReturnComparison() {
-  const width = 300, height = 120;
+  const width = 320, height = 180;
+  const padding = { top: 20, right: 40, bottom: 40, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const originX = padding.left;
+  const originY = padding.top + chartHeight;
+  
   return (
     <svg width={width} height={height} style={{ display: "block", margin: "8px auto" }}>
-      <line x1="40" y1={height - 20} x2="260" y2="20" stroke="#22c55e" strokeWidth="2" />
-      <circle cx="150" cy="70" r="4" fill="#22c55e" />
-      <text x="150" y="65" textAnchor="middle" fontSize="10" fill="#666">高风险高回报</text>
-      <line x1="40" y1={height - 20} x2="180" y2={height - 40} stroke="#94a3b8" strokeWidth="2" />
-      <circle cx="110" cy={height - 30} r="4" fill="#94a3b8" />
-      <text x="110" y={height - 35} textAnchor="middle" fontSize="10" fill="#666">低风险低回报</text>
-      <text x="20" y={height / 2} textAnchor="middle" fontSize="10" fill="#666" transform={`rotate(-90, 20, ${height / 2})`}>
-        回报
+      {/* Grid lines */}
+      {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+        const x = originX + ratio * chartWidth;
+        const y = originY - ratio * chartHeight;
+        return (
+          <g key={i}>
+            <line x1={x} y1={originY} x2={x} y2={padding.top} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+            <line x1={originX} y1={y} x2={width - padding.right} y2={y} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2,2" />
+          </g>
+        );
+      })}
+      
+      {/* Axes */}
+      <line x1={originX} y1={originY} x2={width - padding.right} y2={originY} stroke="#374151" strokeWidth="2" />
+      <line x1={originX} y1={originY} x2={originX} y2={padding.top} stroke="#374151" strokeWidth="2" />
+      
+      {/* Axis labels */}
+      <text x={originX - 8} y={padding.top + 4} textAnchor="end" fontSize="10" fill="#6b7280" fontWeight="600">High</text>
+      <text x={originX - 8} y={originY + 4} textAnchor="end" fontSize="10" fill="#6b7280" fontWeight="600">Low</text>
+      <text x={width - padding.right + 8} y={originY + 4} textAnchor="start" fontSize="10" fill="#6b7280" fontWeight="600">High</text>
+      <text x={originX + 8} y={originY + 4} textAnchor="start" fontSize="10" fill="#6b7280" fontWeight="600">Low</text>
+      
+      {/* Y-axis label */}
+      <text x="15" y={height / 2} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600" transform={`rotate(-90, 15, ${height / 2})`}>
+        Return
       </text>
-      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="10" fill="#666">风险</text>
+      
+      {/* X-axis label */}
+      <text x={width / 2} y={height - 12} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600">
+        Risk
+      </text>
+      
+      {/* High risk/return line */}
+      <line x1={originX} y1={originY} x2={width - padding.right} y2={padding.top} 
+            stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx={width - padding.right} cy={padding.top} r="5" fill="#22c55e" />
+      <text x={width - padding.right} y={padding.top - 8} textAnchor="middle" fontSize="10" fill="#22c55e" fontWeight="600">
+        High Risk/Return
+      </text>
+      
+      {/* Low risk/return line */}
+      <line x1={originX} y1={originY} x2={originX + chartWidth * 0.6} y2={originY - chartHeight * 0.2} 
+            stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx={originX + chartWidth * 0.6} cy={originY - chartHeight * 0.2} r="5" fill="#94a3b8" />
+      <text x={originX + chartWidth * 0.6} y={originY - chartHeight * 0.2 - 8} textAnchor="middle" fontSize="10" fill="#6b7280" fontWeight="600">
+        Low Risk/Return
+      </text>
+      
+      {/* Title */}
+      <text x={width / 2} y={12} textAnchor="middle" fontSize="11" fill="#111" fontWeight="600">
+        Risk vs Return Trade-off
+      </text>
     </svg>
   );
 }
