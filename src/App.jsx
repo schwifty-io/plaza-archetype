@@ -979,6 +979,266 @@ const ARCHETYPE_DESCRIPTIONS = {
     "The Casual Speculator — Markets are a hobby, not a mission. They enjoy reading financial news, trying ideas, and sometimes following tips — but without a deep plan. They see investing as part intuition, part entertainment. Advisors who keep things light yet educational can gradually build trust and structure around their behavior. Left unguided, they drift with trends; guided well, they mature into balanced investors who enjoy both the process and the purpose.",
 };
 
+// ===== Allocation by Archetype =====
+const ALLOCATION_BY_ARCHETYPE = {
+  MSED: {
+    label: "MSED – Steady Builder",
+    tagline: "Slightly growth-tilted core allocation with modest risk adjustments.",
+    reason:
+      "Because you score as a Steady Builder, the portfolio keeps a broad, diversified equity sleeve while nudging balanced and alternatives only modestly. The goal is steady compounding with enough fixed income to keep drawdowns manageable.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 23, adjustment: "↑ 1%", holdings: "PRF 6.30, AIRR 5.23, QQQM 5.23, TOPT 3.14, SETM 3.14" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 9,  adjustment: "↓ 1%", holdings: "BJAN 4.5, PJAN 4.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 16, adjustment: "↑ 1%", holdings: "PRWCX 10.67, BMCIX 5.33" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 11, adjustment: "—",    holdings: "QMNIX 4.5, BDMIX 4.5, QLEIX 2" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MSEC: {
+    label: "MSEC – Anxious Veteran",
+    tagline: "Adds ballast via buffered equity and fixed income for a more defensive posture.",
+    reason:
+      "As an Anxious Veteran, you have experience but can be rattled by volatility. This mix shifts a bit from core equity into buffered and fixed income sleeves to dampen swings while still participating in market growth.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 20, adjustment: "↓ 2%", holdings: "PRF 5.45, AIRR 4.55, QQQM 4.55, TOPT 2.73, SETM 2.73" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 12, adjustment: "↑ 2%", holdings: "BJAN 6, PJAN 6" },
+      { sleeve: "International Equity",      weight: 15, adjustment: "↓ 1%", holdings: "APDRX 7.5, MAEGX 7.5" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 16, adjustment: "↑ 1%", holdings: "TLH 4, USHY 4, NWVHX 4, PONPX 4" },
+      { sleeve: "Alternatives",              weight: 10, adjustment: "↓ 1%", holdings: "QMNIX 4.09, BDMIX 4.09, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MBED: {
+    label: "MBED – Confident Strategist",
+    tagline: "Keeps a pro-growth equity stance with modest tilts toward alternatives.",
+    reason:
+      "As a Confident Strategist, you are comfortable taking risk when it is justified. The allocation keeps equity sleeves near their neutral levels and slightly increases alternatives, aiming for higher long-term return without abandoning diversification.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 24, adjustment: "↑ 2%", holdings: "PRF 6.60, AIRR 5.40, QQQM 5.40, TOPT 3.30, SETM 3.30" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 12, adjustment: "↑ 1%", holdings: "QMNIX 4.91, BDMIX 4.91, QLEIX 2.18" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MBEC: {
+    label: "MBEC – Overconfident Trader",
+    tagline: "Leans further into equity and alternatives, while trimming balanced and bonds.",
+    reason:
+      "Overconfident Traders tend to chase upside and underweight safety assets. This mix intentionally boosts core equity and alternatives and slightly reduces balanced and fixed income sleeves, while still keeping diversification so one bad trade does not dominate outcomes.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 25, adjustment: "↑ 3%", holdings: "PRF 6.82, AIRR 5.68, QQQM 5.68, TOPT 3.41, SETM 3.41" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 15, adjustment: "↓ 1%", holdings: "APDRX 7.5, MAEGX 7.5" },
+      { sleeve: "Balanced",                  weight: 14, adjustment: "↓ 1%", holdings: "PRWCX 9.33, BMCIX 4.67" },
+      { sleeve: "Fixed Income",              weight: 13, adjustment: "↓ 2%", holdings: "TLH 3.25, USHY 3.25, NWVHX 3.25, PONPX 3.25" },
+      { sleeve: "Alternatives",              weight: 14, adjustment: "↑ 3%", holdings: "QMNIX 5.73, BDMIX 5.73, QLEIX 2.55" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MSFD: {
+    label: "MSFD – Aspiring Learner",
+    tagline: "Balances education-friendly downside protection with enough growth exposure.",
+    reason:
+      "As an Aspiring Learner, you are cautious but open to guidance. This allocation modestly increases buffered and balanced sleeves so that you can stay invested through volatility while you learn, without giving up long-term equity growth.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 20, adjustment: "↓ 2%", holdings: "PRF 5.45, AIRR 4.55, QQQM 4.55, TOPT 2.73, SETM 2.73" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 11, adjustment: "↑ 1%", holdings: "BJAN 5.5, PJAN 5.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 17, adjustment: "↑ 2%", holdings: "PRWCX 11.33, BMCIX 5.67" },
+      { sleeve: "Fixed Income",              weight: 15, adjustment: "—",    holdings: "TLH 3.75, USHY 3.75, NWVHX 3.75, PONPX 3.75" },
+      { sleeve: "Alternatives",              weight: 10, adjustment: "↓ 1%", holdings: "QMNIX 4.09, BDMIX 4.09, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MSFC: {
+    label: "MSFC – Cautious Beginner",
+    tagline: "Raises buffered equity and fixed income to create a smoother learning curve.",
+    reason:
+      "Cautious Beginners value protection as they build confidence. The portfolio shifts a bit more into buffered equity and fixed income and away from core equity and alternatives, helping you stay invested through early market cycles.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 19, adjustment: "↓ 3%", holdings: "PRF 5.23, AIRR 4.36, QQQM 4.36, TOPT 2.62, SETM 2.62" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 13, adjustment: "↑ 3%", holdings: "BJAN 6.5, PJAN 6.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 17, adjustment: "↑ 2%", holdings: "TLH 4.25, USHY 4.25, NWVHX 4.25, PONPX 4.25" },
+      { sleeve: "Alternatives",              weight: 9,  adjustment: "↓ 2%", holdings: "QMNIX 3.64, BDMIX 3.64, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MBFD: {
+    label: "MBFD – Ambitious Upstart",
+    tagline: "Growth-tilted with modest extra balanced exposure to keep you on track.",
+    reason:
+      "Ambitious Upstarts want to move quickly but still appreciate some guardrails. The mix modestly boosts core equity and balanced sleeves and slightly trims fixed income, leaning into growth while keeping multi-asset diversification.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 24, adjustment: "↑ 2%", holdings: "PRF 6.60, AIRR 5.40, QQQM 5.40, TOPT 3.30, SETM 3.30" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 16, adjustment: "↑ 1%", holdings: "PRWCX 10.67, BMCIX 5.33" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 11, adjustment: "—",    holdings: "QMNIX 4.5, BDMIX 4.5, QLEIX 2" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  MBFC: {
+    label: "MBFC – Thrill-Seeking Novice",
+    tagline: "Pushes equity and alternatives up while keeping a core of diversifiers.",
+    reason:
+      "Thrill-Seeking Novices are drawn to excitement. This allocation tilts toward core equity and alternatives, and reduces buffered and fixed income a bit, but still keeps balanced and international sleeves so the portfolio is not a single bet.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 25, adjustment: "↑ 3%", holdings: "PRF 6.82, AIRR 5.68, QQQM 5.68, TOPT 3.41, SETM 3.41" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 7,  adjustment: "↓ 3%", holdings: "BJAN 3.5, PJAN 3.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 12, adjustment: "↑ 1%", holdings: "QMNIX 4.91, BDMIX 4.91, QLEIX 2.18" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LSED: {
+    label: "LSED – Relaxed Veteran",
+    tagline: "Tilts modestly toward balanced and fixed income for a smoother ride.",
+    reason:
+      "Relaxed Veterans have seen many cycles and prefer not to overreact. The allocation trims core equity slightly and adds to balanced and fixed income, keeping growth potential with more built-in cushion.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 21, adjustment: "↓ 1%", holdings: "PRF 5.73, AIRR 4.78, QQQM 4.78, TOPT 2.87, SETM 2.87" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 10, adjustment: "—",    holdings: "BJAN 5, PJAN 5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 16, adjustment: "↑ 1%", holdings: "PRWCX 10.67, BMCIX 5.33" },
+      { sleeve: "Fixed Income",              weight: 16, adjustment: "↑ 1%", holdings: "TLH 4, USHY 4, NWVHX 4, PONPX 4" },
+      { sleeve: "Alternatives",              weight: 10, adjustment: "↓ 1%", holdings: "QMNIX 4.09, BDMIX 4.09, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LSEC: {
+    label: "LSEC – Hesitant Saver",
+    tagline: "Adds buffered and fixed income exposure to protect hard-earned savings.",
+    reason:
+      "Hesitant Savers want their money to work but fear large losses. This mix slightly shifts from core and international equity into buffered and fixed income sleeves so the portfolio can participate in growth while keeping a stronger safety net.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 20, adjustment: "↓ 2%", holdings: "PRF 5.45, AIRR 4.55, QQQM 4.55, TOPT 2.73, SETM 2.73" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 12, adjustment: "↑ 2%", holdings: "BJAN 6, PJAN 6" },
+      { sleeve: "International Equity",      weight: 15, adjustment: "↓ 1%", holdings: "APDRX 7.5, MAEGX 7.5" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 16, adjustment: "↑ 1%", holdings: "TLH 4, USHY 4, NWVHX 4, PONPX 4" },
+      { sleeve: "Alternatives",              weight: 10, adjustment: "↓ 1%", holdings: "QMNIX 4.09, BDMIX 4.09, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LBED: {
+    label: "LBED – Opportunistic Veteran",
+    tagline: "Uses experience to lean a bit more into equity and alternatives.",
+    reason:
+      "Opportunistic Veterans are comfortable taking selective risk. The allocation boosts core equity and alternatives while trimming balanced exposure slightly, reflecting your willingness to act when you see value while still keeping fixed income ballast.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 24, adjustment: "↑ 2%", holdings: "PRF 6.60, AIRR 5.40, QQQM 5.40, TOPT 3.30, SETM 3.30" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 14, adjustment: "↓ 1%", holdings: "PRWCX 9.33, BMCIX 4.67" },
+      { sleeve: "Fixed Income",              weight: 15, adjustment: "—",    holdings: "TLH 3.75, USHY 3.75, NWVHX 3.75, PONPX 3.75" },
+      { sleeve: "Alternatives",              weight: 13, adjustment: "↑ 2%", holdings: "QMNIX 5.32, BDMIX 5.32, QLEIX 2.36" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LBEC: {
+    label: "LBEC – Restless Veteran",
+    tagline: "Keeps a growth bias while trimming some safety sleeves.",
+    reason:
+      "Restless Veterans want to stay active and avoid feeling stuck. The mix modestly increases core equity and alternatives and nudges fixed income and balanced sleeves down, in line with a more growth-oriented but still diversified stance.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 25, adjustment: "↑ 3%", holdings: "PRF 6.82, AIRR 5.68, QQQM 5.68, TOPT 3.41, SETM 3.41" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 14, adjustment: "↓ 1%", holdings: "PRWCX 9.33, BMCIX 4.67" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 12, adjustment: "↑ 1%", holdings: "QMNIX 4.91, BDMIX 4.91, QLEIX 2.18" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LSFD: {
+    label: "LSFD – Cautious Passive Investor",
+    tagline: "Raises balanced and buffered exposure for a more hands-off glide path.",
+    reason:
+      "Cautious Passive Investors prefer a set-it-and-monitor approach with limited surprises. This mix boosts balanced and buffered sleeves and trims core equity and alternatives so the portfolio can track long-term goals with fewer sharp drawdowns.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 19, adjustment: "↓ 3%", holdings: "PRF 5.18, AIRR 4.30, QQQM 4.30, TOPT 2.58, SETM 2.58" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 12, adjustment: "↑ 2%", holdings: "BJAN 6, PJAN 6" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 17, adjustment: "↑ 2%", holdings: "PRWCX 11.33, BMCIX 5.67" },
+      { sleeve: "Fixed Income",              weight: 15, adjustment: "—",    holdings: "TLH 3.75, USHY 3.75, NWVHX 3.75, PONPX 3.75" },
+      { sleeve: "Alternatives",              weight: 10, adjustment: "↓ 1%", holdings: "QMNIX 4.09, BDMIX 4.09, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LSFC: {
+    label: "LSFC – Nervous Newbie",
+    tagline: "Adds even more fixed income and buffered equity to help you stay invested.",
+    reason:
+      "Nervous Newbies are most likely to abandon the plan after a bad headline. This allocation meaningfully increases fixed income and buffered sleeves and trims core equity and alternatives so that volatility stays within a tolerable range.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 18, adjustment: "↓ 4%", holdings: "PRF 4.91, AIRR 4.08, QQQM 4.08, TOPT 2.45, SETM 2.45" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 13, adjustment: "↑ 3%", holdings: "BJAN 6.5, PJAN 6.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 18, adjustment: "↑ 3%", holdings: "TLH 4.50, USHY 4.50, NWVHX 4.50, PONPX 4.50" },
+      { sleeve: "Alternatives",              weight: 9,  adjustment: "↓ 2%", holdings: "QMNIX 3.64, BDMIX 3.64, QLEIX 1.82" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LBFD: {
+    label: "LBFD – Curious Explorer",
+    tagline: "Keeps a growth tilt while adding just enough ballast to explore confidently.",
+    reason:
+      "Curious Explorers enjoy trying new ideas but still value a core plan. The mix looks similar to other MB-style growth allocations, with a bit more balanced sleeve to smooth returns while you experiment on the margins.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 24, adjustment: "↑ 2%", holdings: "PRF 6.60, AIRR 5.40, QQQM 5.40, TOPT 3.30, SETM 3.30" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 8,  adjustment: "↓ 2%", holdings: "BJAN 4, PJAN 4" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 16, adjustment: "↑ 1%", holdings: "PRWCX 10.67, BMCIX 5.33" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 11, adjustment: "—",    holdings: "QMNIX 4.5, BDMIX 4.5, QLEIX 2" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+  LBFC: {
+    label: "LBFC – Casual Speculator",
+    tagline: "Leans furthest into equity and alternatives while keeping some core diversifiers.",
+    reason:
+      "Casual Speculators enjoy taking shots but not betting the house. This portfolio raises core equity and alternatives the most and trims buffered and fixed income, while still keeping international and balanced sleeves to avoid single-factor risk.",
+    sleeves: [
+      { sleeve: "U.S. Equity (Core/Factor)", weight: 25, adjustment: "↑ 3%", holdings: "PRF 6.82, AIRR 5.68, QQQM 5.68, TOPT 3.41, SETM 3.41" },
+      { sleeve: "U.S. Equity (Index)",       weight: 10, adjustment: "—",    holdings: "VTSAX 10" },
+      { sleeve: "U.S. Equity (Buffered)",    weight: 7,  adjustment: "↓ 3%", holdings: "BJAN 3.5, PJAN 3.5" },
+      { sleeve: "International Equity",      weight: 16, adjustment: "—",    holdings: "APDRX 8, MAEGX 8" },
+      { sleeve: "Balanced",                  weight: 15, adjustment: "—",    holdings: "PRWCX 10, BMCIX 5" },
+      { sleeve: "Fixed Income",              weight: 14, adjustment: "↓ 1%", holdings: "TLH 3.50, USHY 3.50, NWVHX 3.50, PONPX 3.50" },
+      { sleeve: "Alternatives",              weight: 12, adjustment: "↑ 1%", holdings: "QMNIX 4.91, BDMIX 4.91, QLEIX 2.18" },
+      { sleeve: "Money Market",              weight: 1,  adjustment: "—",    holdings: "TRPXX 1" },
+    ],
+  },
+};
+
 // ===== Questions (Sections 1–4; Section 5 only has 5.1–5.3 now) =====
 const QUESTIONS = [
   // ===== 1. Situation & Goals =====
@@ -1264,6 +1524,24 @@ const S = {
   desc: { marginTop:14, padding:14, border:`1px dashed ${theme.border}`, borderRadius:12, background:"#fff" },
   descTitle: { fontSize:16, fontWeight:700, marginBottom:6 },
   descText: { fontSize:14, lineHeight:1.5, color: theme.text },
+
+  // Allocation section styles
+  allocSection: { marginTop: 16, padding: 14, border:`1px solid ${theme.border}`, borderRadius: 12, background:"#fff" },
+  allocHeader: { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:8, flexWrap:"wrap", marginBottom:4 },
+  allocTitle: { fontSize:16, fontWeight:700 },
+  allocTagline: { fontSize:13, color: theme.subtext },
+  allocReason: { fontSize:13, lineHeight:1.5, marginTop:4, color: theme.text },
+  allocChart: { marginTop:10, display:"grid", gap:10, gridTemplateColumns:"minmax(0,1.6fr) minmax(0,1fr)" },
+  allocBar: { display:"flex", height:20, borderRadius:999, overflow:"hidden", border:`1px solid ${theme.border}`, background: theme.muted },
+  allocBarSegment: { display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:600, color:"#fff" },
+  allocChartLegend: { fontSize:12, display:"grid", gap:4 },
+  allocLegendRow: { display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 },
+  allocLegendName: { flex:1 },
+  allocLegendWeight: { fontVariantNumeric:"tabular-nums" },
+  allocTable: { marginTop:12, borderTop:`1px solid ${theme.border}`, fontSize:13 },
+  allocTableHeader: { display:"grid", gridTemplateColumns:"2fr 0.7fr 0.8fr 2.2fr", fontWeight:600, padding:"6px 0", borderBottom:`1px solid ${theme.border}` },
+  allocRow: { display:"grid", gridTemplateColumns:"2fr 0.7fr 0.8fr 2.2fr", padding:"6px 0", borderBottom:`1px dashed ${theme.border}` },
+  allocCellHoldings: { fontSize:12, color: theme.subtext },
 };
 
 // Helper function to render visual components
@@ -1347,6 +1625,7 @@ export default function App(){
   const result = useMemo(()=>computeScores(answers),[answers]);
   const change = useMemo(()=>computeChangeIndex(answers), [answers]);
   const desc = ARCHETYPE_DESCRIPTIONS[result.archetype] || "No description available for this code.";
+  const allocation = ALLOCATION_BY_ARCHETYPE[result.archetype];
 
   return (
     <div style={S.page}>
@@ -1416,8 +1695,105 @@ export default function App(){
               <div style={S.descTitle}>Archetype Profile — {result.archetype}</div>
               <div style={S.descText}>{desc}</div>
             </div>
+
+            {/* allocation section */}
+            {allocation && allocation.sleeves && Array.isArray(allocation.sleeves) && (
+              <div style={S.allocSection}>
+                <div style={S.allocHeader}>
+                  <div style={S.allocTitle}>Suggested Sleeve Allocation</div>
+                  {allocation.tagline && <div style={S.allocTagline}>{allocation.tagline}</div>}
+                </div>
+                {allocation.reason && <p style={S.allocReason}>{allocation.reason}</p>}
+
+                {/* 简单"条形图"：用宽度表示各 sleeve 权重 */}
+                <div style={S.allocChart}>
+                  <div style={S.allocBar}>
+                    {allocation.sleeves.map((s, idx) => {
+                      // 为不同sleeve类型设置不同颜色
+                      const colors = [
+                        "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", 
+                        "#10b981", "#06b6d4", "#6366f1", "#ef4444"
+                      ];
+                      const bgColor = colors[idx % colors.length];
+                      return (
+                        <div
+                          key={s.sleeve}
+                          style={{
+                            ...S.allocBarSegment,
+                            flexGrow: s.weight,
+                            flexBasis: `${s.weight}%`,
+                            background: bgColor,
+                            minWidth: s.weight < 5 ? "30px" : "auto",
+                          }}
+                        >
+                          {s.weight >= 3 ? `${s.weight}%` : ""}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 右侧文字 legend */}
+                  <div style={S.allocChartLegend}>
+                    {allocation.sleeves.map((s, idx) => {
+                      const colors = [
+                        "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", 
+                        "#10b981", "#06b6d4", "#6366f1", "#ef4444"
+                      ];
+                      const bgColor = colors[idx % colors.length];
+                      return (
+                        <div key={s.sleeve + "-legend"} style={S.allocLegendRow}>
+                          <div style={{...S.allocLegendName, display:"flex", alignItems:"center", gap:6}}>
+                            <div style={{width:12, height:12, borderRadius:2, background:bgColor}}/>
+                            <span>{s.sleeve}</span>
+                          </div>
+                          <div style={S.allocLegendWeight}>{s.weight}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 表格：基本复制你 word 里的格式 */}
+                <div style={S.allocTable}>
+                  <div style={S.allocTableHeader}>
+                    <div>Sleeve</div>
+                    <div>Target</div>
+                    <div>Adjust</div>
+                    <div>Key Holdings</div>
+                  </div>
+                  {allocation.sleeves.map((s) => (
+                    <div key={s.sleeve + "-row"} style={S.allocRow}>
+                      <div>{s.sleeve || "-"}</div>
+                      <div>{s.weight != null ? `${s.weight}%` : "-"}</div>
+                      <div>{s.adjustment || "-"}</div>
+                      <div style={S.allocCellHoldings}>{s.holdings || "-"}</div>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 4, fontSize: 12, color: theme.subtext }}>
+                    Total = {allocation.sleeves.reduce((sum, s) => sum + (s.weight || 0), 0)}%
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+        {/* Reference Link Section */}
+        <div style={{...S.card, marginTop: 32, textAlign: "center"}}>
+          <div style={{...S.descTitle, marginBottom: 8}}>Reference</div>
+          <div style={S.descText}>
+            For more details, please refer to the following document:
+            <br />
+            <a 
+              href="https://gowustl-my.sharepoint.com/:w:/g/personal/c_xuanrui_wustl_edu/EXShuU9UQOVHh3LDGsgPFhkBQZF_2ccAQetqtLRQqPVBug?e=lX9q8x"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: theme.primary, textDecoration: "underline", wordBreak: "break-all" }}
+            >
+              https://gowustl-my.sharepoint.com/:w:/g/personal/c_xuanrui_wustl_edu/EXShuU9UQOVHh3LDGsgPFhkBQZF_2ccAQetqtLRQqPVBug?e=lX9q8x
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
