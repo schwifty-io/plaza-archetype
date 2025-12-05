@@ -1288,6 +1288,12 @@ const QUESTIONS = [
     text: "If you rely on this account for living expenses, would you draw regularly or preserve it for future use?",
     A: "Draw regularly", B: "Preserve for future",
     dimension: "Motivation", isKey:false, weight:1, high:"B" },
+  { code: "1.11", section: "Situation & Goals",
+    text: "Do you currently have assets that cannot be invested (e.g., real estate, collectibles, private equity, restricted stock)?",
+    A: "Yes, I have non-investable assets", B: "No, all assets can be invested",
+    dimension: "CapacityConstraint",
+    isMultipleChoice: true,
+    assetExclusion: true },
 
   // ===== 2. Risk Tolerance =====
   { code: "2.1", section: "Risk Tolerance",
@@ -1406,6 +1412,27 @@ const QUESTIONS = [
     dimension: "ChangeOnly", isKey: false },
 ];
 
+// ===== Non-investable Asset Types =====
+const NON_INVESTABLE_ASSET_TYPES = [
+  { id: "real_estate", label: "Real Estate", description: "Residential or commercial real estate holdings" },
+  { id: "collectibles", label: "Collectibles", description: "Art, antiques, wine, or other collectible items" },
+  { id: "private_equity", label: "Private Equity / Business Ownership", description: "Ownership in private companies or businesses" },
+  { id: "restricted_stock", label: "Restricted Stock / Stock Options", description: "Company stock with vesting or trading restrictions" },
+  { id: "commodities", label: "Physical Commodities", description: "Precious metals, commodities held physically" },
+  { id: "cash_large", label: "Large Cash Holdings", description: "Significant cash reserves not intended for investment" },
+];
+
+// Mapping from asset types to allocation sleeves that should be excluded/reduced
+// If an asset type is selected, we'll remove or reduce these sleeves proportionally
+const ASSET_TYPE_TO_SLEEVES = {
+  real_estate: ["Alternatives"], // Real estate often overlaps with alternatives
+  collectibles: ["Alternatives"],
+  private_equity: ["Alternatives", "U.S. Equity (Core/Factor)"],
+  restricted_stock: ["U.S. Equity (Core/Factor)", "U.S. Equity (Index)"],
+  commodities: ["Alternatives"],
+  cash_large: ["Money Market", "Fixed Income"],
+};
+
 // === Polarity & defaults ===
 const RIGHT_LEFT = {
   Motivation: ["M","L"],
@@ -1481,67 +1508,461 @@ function computeChangeIndex(ans){
   return { score, direction: dir };
 }
 
-// ===== Minimal, clean UI (no Tailwind) =====
+// ===== Professional Clean Design System =====
 const theme = {
-  bg: "#fafafa", text: "#111", subtext: "#666", border: "#e6e6e6",
-  card: "#fff", primary: "#111", muted: "#f2f2f2", green: "#22c55e"
+  // Professional color palette - clean and trustworthy
+  bg: "#F8F9FA",
+  bgSolid: "#F8F9FA",
+  text: "#1F2937",
+  subtext: "#6B7280",
+  border: "#E5E7EB",
+  card: "#FFFFFF",
+  primary: "#1F2937",
+  accent: "#2563EB", // Professional blue
+  accentLight: "#3B82F6",
+  accentDark: "#1D4ED8",
+  muted: "#F3F4F6",
+  green: "#10B981",
+  accentGradient: "linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)",
+  shadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+  shadowHover: "0 8px 24px rgba(0, 0, 0, 0.12)",
+  shadowCard: "0 2px 8px rgba(0, 0, 0, 0.06)",
 };
+
 const S = {
-  page: { fontFamily:"system-ui, -apple-system, Segoe UI, Roboto, Arial", background: theme.bg, color: theme.text, minHeight:"100vh" },
-  wrap: { maxWidth: 980, margin: "0 auto", padding: "24px" },
-  header: { display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:12, marginBottom:16 },
-  h1: { fontSize: 24, fontWeight: 800, margin: 0 },
-  hint: { fontSize: 13, color: theme.subtext },
-  progressBox: { width: 180 },
-  progressBar: { height:8, background: theme.muted, borderRadius:999, overflow:"hidden" },
-  progressInner: (w)=>({ width: w+"%", height:"100%", background: theme.primary, transition:"width .25s ease" }),
-  grid: { display:"grid", gap:12 },
-  card: { background: theme.card, border:`1px solid ${theme.border}`, borderRadius:16, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,.04)" },
-  code: { fontSize:12, color: theme.subtext, marginBottom:6 },
-  qtext: { fontWeight:600, marginBottom:10, lineHeight:1.35 },
-  twoCols: { display:"grid", gap:10, gridTemplateColumns:"1fr 1fr" },
-  radio: (active)=>({
-    display:"flex", gap:10, alignItems:"flex-start",
-    border:`1px solid ${active? theme.primary: theme.border}`,
-    borderRadius:12, padding:"10px 12px", cursor:"pointer",
-    background: "#fff",
-    boxShadow: active? "0 2px 10px rgba(0,0,0,.06)" : "none",
-    transition:"all .15s ease"
+  page: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    background: theme.bg,
+    color: theme.text,
+    minHeight: "100vh",
+    position: "relative"
+  },
+  wrap: {
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: "48px 32px",
+    position: "relative"
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 24,
+    marginBottom: 48,
+    paddingBottom: 24,
+    borderBottom: `1px solid ${theme.border}`,
+    position: "relative"
+  },
+  h1: {
+    fontSize: "clamp(28px, 4vw, 36px)",
+    fontWeight: 700,
+    margin: 0,
+    letterSpacing: "-0.01em",
+    color: theme.text
+  },
+  hint: {
+    fontSize: 14,
+    color: theme.subtext,
+    marginTop: 12,
+    lineHeight: 1.6,
+    fontStyle: "italic"
+  },
+  progressBox: {
+    minWidth: 220,
+    padding: "16px 20px",
+    background: theme.card,
+    borderRadius: 12,
+    boxShadow: theme.shadowCard,
+    border: `1px solid ${theme.border}`
+  },
+  progressLabel: {
+    fontSize: 12,
+    color: theme.subtext,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    fontWeight: 500
+  },
+  progressBar: {
+    height: 6,
+    background: theme.muted,
+    borderRadius: 999,
+    overflow: "hidden",
+    position: "relative",
+    border: `1px solid ${theme.border}`
+  },
+  progressInner: (w) => ({
+    width: w + "%",
+    height: "100%",
+    background: theme.accentGradient,
+    transition: "width .6s cubic-bezier(0.4, 0, 0.2, 1)",
+    position: "relative",
+    overflow: "hidden"
   }),
-  small: { fontSize:12, color: theme.subtext },
-  btnRow: { display:"flex", gap:10, marginTop:16 },
-  btnPrimary: { background: theme.primary, color:"#fff", padding:"10px 16px", borderRadius:14, border:"none", cursor:"pointer", fontWeight:600 },
-  btnOutline: { background:"#fff", color:theme.text, padding:"10px 16px", borderRadius:14, border:`1px solid ${theme.border}`, cursor:"pointer", fontWeight:600 },
-  result: { marginTop:16, border:`2px solid ${theme.text}`, borderRadius:16, padding:16 },
-  resultHead: { display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:10 },
-  badge: { border:`1px solid ${theme.border}`, padding:"4px 10px", borderRadius:999, fontSize:14 },
-  stats: { display:"grid", gap:10, gridTemplateColumns:"repeat(4,minmax(0,1fr))" },
-  statCard: { border:`1px solid ${theme.border}`, borderRadius:12, padding:12 },
-  statTitle: { fontSize:12, color: theme.subtext },
-  statScore: { fontSize:20, fontWeight:800 },
-  statPol: { fontSize:13 },
-  note: { marginTop:8, fontSize:13, color:theme.subtext },
-  desc: { marginTop:14, padding:14, border:`1px dashed ${theme.border}`, borderRadius:12, background:"#fff" },
-  descTitle: { fontSize:16, fontWeight:700, marginBottom:6 },
-  descText: { fontSize:14, lineHeight:1.5, color: theme.text },
+  progressPercent: {
+    fontSize: 16,
+    fontWeight: 600,
+    color: theme.accent,
+    marginTop: 8,
+    textAlign: "right"
+  },
+  grid: {
+    display: "grid",
+    gap: 24
+  },
+  card: {
+    background: theme.card,
+    border: `1px solid ${theme.border}`,
+    borderRadius: 12,
+    padding: "24px",
+    boxShadow: theme.shadowCard,
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    position: "relative",
+    overflow: "hidden"
+  },
+  code: {
+    fontSize: 11,
+    color: theme.subtext,
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    fontWeight: 600
+  },
+  qtext: {
+    fontWeight: 500,
+    marginBottom: 20,
+    lineHeight: 1.6,
+    fontSize: 16,
+    color: theme.text
+  },
+  twoCols: {
+    display: "grid",
+    gap: 16,
+    gridTemplateColumns: "1fr 1fr"
+  },
+  radio: (active) => ({
+    display: "flex",
+    gap: 12,
+    alignItems: "flex-start",
+    border: `2px solid ${active ? theme.accent : theme.border}`,
+    borderRadius: 8,
+    padding: "16px 20px",
+    cursor: "pointer",
+    background: active ? `${theme.accent}08` : theme.card,
+    boxShadow: active ? `0 0 0 3px ${theme.accent}15` : "none",
+    transition: "all 0.2s ease",
+    position: "relative"
+  }),
+  radioIndicator: {
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    border: `2px solid ${theme.border}`,
+    position: "relative",
+    marginTop: 2,
+    flexShrink: 0,
+    transition: "all 0.2s ease"
+  },
+  small: {
+    fontSize: 12,
+    color: theme.subtext,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: 6
+  },
+  btnRow: {
+    display: "flex",
+    gap: 16,
+    marginTop: 32,
+    justifyContent: "center"
+  },
+  btnPrimary: {
+    background: theme.accent,
+    color: "#FFFFFF",
+    padding: "12px 32px",
+    borderRadius: 8,
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: 14,
+    transition: "all 0.2s ease"
+  },
+  btnOutline: {
+    background: theme.card,
+    color: theme.text,
+    padding: "12px 32px",
+    borderRadius: 8,
+    border: `1px solid ${theme.border}`,
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: 14,
+    transition: "all 0.2s ease"
+  },
+  result: {
+    marginTop: 48,
+    border: `1px solid ${theme.border}`,
+    borderRadius: 12,
+    padding: "32px",
+    background: theme.card,
+    boxShadow: theme.shadowCard,
+    position: "relative"
+  },
+  resultHead: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    marginBottom: 32,
+    position: "relative",
+    zIndex: 1
+  },
+  badge: {
+    border: `1px solid ${theme.border}`,
+    padding: "6px 12px",
+    borderRadius: 6,
+    fontSize: 12,
+    background: theme.muted,
+    fontWeight: 600,
+    color: theme.text
+  },
+  stats: {
+    display: "grid",
+    gap: 16,
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    marginBottom: 32
+  },
+  statCard: {
+    border: `1px solid ${theme.border}`,
+    borderRadius: 8,
+    padding: 16,
+    background: theme.card,
+    transition: "all 0.2s ease",
+    position: "relative"
+  },
+  statTitle: {
+    fontSize: 11,
+    color: theme.subtext,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    marginBottom: 8,
+    fontWeight: 600
+  },
+  statScore: {
+    fontSize: 24,
+    fontWeight: 700,
+    color: theme.text,
+    lineHeight: 1.2
+  },
+  statPol: {
+    fontSize: 13,
+    color: theme.accent,
+    fontWeight: 600,
+    marginTop: 4
+  },
+  note: {
+    marginTop: 24,
+    fontSize: 13,
+    color: theme.subtext,
+    lineHeight: 1.7,
+    fontStyle: "italic",
+    padding: "16px 20px",
+    background: theme.muted,
+    borderRadius: 12,
+    border: `1px solid ${theme.border}`
+  },
+  desc: {
+    marginTop: 24,
+    padding: "24px",
+    border: `1px solid ${theme.border}`,
+    borderRadius: 8,
+    background: theme.card,
+    boxShadow: theme.shadowCard
+  },
+  descTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 12,
+    color: theme.text
+  },
+  descText: {
+    fontSize: 14,
+    lineHeight: 1.7,
+    color: theme.text
+  },
+  ageInput: {
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    marginTop: 16,
+    padding: "12px 20px",
+    background: theme.card,
+    borderRadius: 12,
+    border: `1px solid ${theme.border}`,
+    boxShadow: theme.shadowCard,
+    width: "fit-content"
+  },
+  ageLabel: {
+    fontSize: 14,
+    color: theme.subtext,
+    fontWeight: 500,
+    fontFamily: "system-ui, sans-serif"
+  },
+  ageInputField: {
+    width: 100,
+    padding: "8px 12px",
+    border: `1px solid ${theme.border}`,
+    borderRadius: 6,
+    fontSize: 14,
+    color: theme.text,
+    background: theme.card,
+    transition: "all 0.2s ease"
+  },
+  ageInputFieldFocused: {
+    outline: "none",
+    borderColor: theme.accent,
+    boxShadow: `0 0 0 3px ${theme.accent}15`
+  },
 
   // Allocation section styles
-  allocSection: { marginTop: 16, padding: 14, border:`1px solid ${theme.border}`, borderRadius: 12, background:"#fff" },
-  allocHeader: { display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:8, flexWrap:"wrap", marginBottom:4 },
-  allocTitle: { fontSize:16, fontWeight:700 },
-  allocTagline: { fontSize:13, color: theme.subtext },
-  allocReason: { fontSize:13, lineHeight:1.5, marginTop:4, color: theme.text },
-  allocChart: { marginTop:10, display:"grid", gap:10, gridTemplateColumns:"minmax(0,1.6fr) minmax(0,1fr)" },
-  allocBar: { display:"flex", height:20, borderRadius:999, overflow:"hidden", border:`1px solid ${theme.border}`, background: theme.muted },
-  allocBarSegment: { display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:600, color:"#fff" },
-  allocChartLegend: { fontSize:12, display:"grid", gap:4 },
-  allocLegendRow: { display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 },
-  allocLegendName: { flex:1 },
-  allocLegendWeight: { fontVariantNumeric:"tabular-nums" },
-  allocTable: { marginTop:12, borderTop:`1px solid ${theme.border}`, fontSize:13 },
-  allocTableHeader: { display:"grid", gridTemplateColumns:"2fr 0.7fr 0.8fr 2.2fr", fontWeight:600, padding:"6px 0", borderBottom:`1px solid ${theme.border}` },
-  allocRow: { display:"grid", gridTemplateColumns:"2fr 0.7fr 0.8fr 2.2fr", padding:"6px 0", borderBottom:`1px dashed ${theme.border}` },
-  allocCellHoldings: { fontSize:12, color: theme.subtext },
+  allocSection: {
+    marginTop: 24,
+    padding: "24px",
+    border: `1px solid ${theme.border}`,
+    borderRadius: 8,
+    background: theme.card,
+    boxShadow: theme.shadowCard
+  },
+  allocHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottom: `1px solid ${theme.border}`
+  },
+  allocTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: theme.text
+  },
+  allocTagline: {
+    fontSize: 14,
+    color: theme.subtext
+  },
+  allocReason: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    marginTop: 12,
+    color: theme.text
+  },
+  allocChart: {
+    marginTop: 24,
+    display: "grid",
+    gap: 24,
+    gridTemplateColumns: "minmax(0, 1.8fr) minmax(0, 1fr)"
+  },
+  allocBar: {
+    display: "flex",
+    height: 28,
+    borderRadius: 6,
+    overflow: "hidden",
+    border: `1px solid ${theme.border}`,
+    background: theme.muted
+  },
+  allocBarSegment: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#FFFFFF",
+    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+    transition: "all 0.3s ease",
+    position: "relative",
+    "&:hover": {
+      filter: "brightness(1.1)",
+      zIndex: 1
+    }
+  },
+  allocChartLegend: {
+    fontSize: 13,
+    display: "grid",
+    gap: 8
+  },
+  allocLegendRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "8px 12px",
+    borderRadius: 8,
+    transition: "all 0.2s ease",
+    "&:hover": {
+      background: theme.muted
+    }
+  },
+  allocLegendName: {
+    flex: 1,
+    fontSize: 13
+  },
+  allocLegendWeight: {
+    fontVariantNumeric: "tabular-nums",
+    fontWeight: 600,
+    color: theme.accent,
+    fontSize: 14
+  },
+  allocTable: {
+    marginTop: 32,
+    borderTop: `2px solid ${theme.border}`,
+    fontSize: 14,
+    fontFamily: "system-ui, sans-serif"
+  },
+  allocTableHeader: {
+    display: "grid",
+    gridTemplateColumns: "2fr 0.8fr 0.9fr 2.3fr",
+    fontWeight: 600,
+    padding: "16px 0",
+    borderBottom: `1px solid ${theme.border}`,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    fontSize: 12,
+    color: theme.subtext
+  },
+  allocRow: {
+    display: "grid",
+    gridTemplateColumns: "2fr 0.8fr 0.9fr 2.3fr",
+    padding: "14px 0",
+    borderBottom: `1px dashed ${theme.border}`,
+    transition: "all 0.2s ease",
+    "&:hover": {
+      background: theme.muted,
+      paddingLeft: 8,
+      paddingRight: 8,
+      borderRadius: 8
+    }
+  },
+  allocCellHoldings: {
+    fontSize: 12,
+    color: theme.subtext,
+    fontFamily: "system-ui, sans-serif"
+  },
+  referenceSection: {
+    marginTop: 32,
+    textAlign: "center",
+    padding: "24px",
+    border: `1px solid ${theme.border}`,
+    borderRadius: 8,
+    background: theme.card,
+    boxShadow: theme.shadowCard
+  },
+  referenceLink: {
+    color: theme.accent,
+    textDecoration: "none",
+    borderBottom: `1px solid ${theme.accent}`,
+    transition: "all 0.2s ease",
+    wordBreak: "break-all"
+  }
 };
 
 // Helper function to render visual components
@@ -1563,25 +1984,204 @@ function renderVisual(config) {
   return Component ? <Component {...props} /> : null;
 }
 
-function Radio({name,label,checked,onChange,desc,visual}) {
+function ProfessionalButton({ children, primary, outline, onClick, style, ...props }) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  
+  const buttonStyle = {
+    ...style,
+    transform: pressed ? "translateY(0)" : hovered ? "translateY(-1px)" : "translateY(0)",
+    boxShadow: primary
+      ? (hovered ? `0 4px 12px ${theme.accent}40` : `0 2px 8px ${theme.accent}30`)
+      : (hovered ? theme.shadowCard : "none"),
+    borderColor: outline && hovered ? theme.accent : style.borderColor,
+    color: outline && hovered ? theme.accent : style.color,
+    background: primary && hovered ? theme.accentDark : style.background
+  };
+  
   return (
-    <label style={S.radio(checked===label)}>
-      <input type="radio" name={name} value={label} checked={checked===label} onChange={(e)=>onChange(e.target.value)} style={{marginTop:2}} />
+    <button
+      {...props}
+      style={buttonStyle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false);
+        setPressed(false);
+      }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Radio({name,label,checked,onChange,desc,visual}) {
+  const isActive = checked === label;
+  const [hovered, setHovered] = React.useState(false);
+  
+  return (
+    <label 
+      style={{
+        ...S.radio(isActive),
+        borderColor: isActive || hovered ? theme.accent : theme.border,
+        boxShadow: isActive ? `0 0 0 3px ${theme.accent}15` : "none",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)"
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        ...S.radioIndicator,
+        borderColor: isActive ? theme.accent : hovered ? theme.accent : theme.border,
+        background: isActive ? theme.accent : "transparent"
+      }}>
+        {isActive && (
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "#FFF"
+          }} />
+        )}
+      </div>
+      <input 
+        type="radio" 
+        name={name} 
+        value={label} 
+        checked={isActive} 
+        onChange={(e)=>onChange(e.target.value)} 
+        style={{position:"absolute", opacity:0, pointerEvents:"none"}}
+      />
       <div style={{width:"100%"}}>
         <div style={S.small}>Option {label}</div>
-        <div style={{fontSize:14, lineHeight:1.35}}>{desc}</div>
-        {visual && <div style={{marginTop:8}}>{renderVisual(visual)}</div>}
+        <div style={{fontSize:14, lineHeight:1.6, color:theme.text}}>{desc}</div>
+        {visual && <div style={{marginTop:12}}>{renderVisual(visual)}</div>}
       </div>
     </label>
   );
 }
 
-function QuestionCard({q, value, set}) {
+function Checkbox({name, label, checked, onChange, desc}) {
+  const [hovered, setHovered] = React.useState(false);
+  
   return (
-    <div style={S.card}>
+    <label 
+      style={{
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        border: `2px solid ${checked ? theme.accent : hovered ? theme.border : theme.border}`,
+        borderRadius: 8,
+        padding: "16px",
+        cursor: "pointer",
+        background: checked ? `${theme.accent}08` : theme.card,
+        boxShadow: checked ? `0 0 0 3px ${theme.accent}15` : "none",
+        transition: "all 0.2s ease",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)"
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <input 
+        type="checkbox" 
+        name={name} 
+        checked={checked} 
+        onChange={(e)=>onChange(e.target.checked)} 
+        style={{marginTop: 2, width: 18, height: 18, cursor: "pointer"}}
+      />
+      <div style={{width:"100%"}}>
+        <div style={{fontSize:13, fontWeight:600, color:theme.text, marginBottom:4}}>{label}</div>
+        {desc && <div style={{fontSize:12, lineHeight:1.5, color:theme.subtext}}>{desc}</div>}
+      </div>
+    </label>
+  );
+}
+
+function QuestionCard({q, value, set, assetTypes, setAssetTypes}) {
+  const [hovered, setHovered] = React.useState(false);
+  
+  // Handle multiple choice questions (asset exclusion)
+  if (q.isMultipleChoice && q.assetExclusion) {
+    const hasNonInvestable = value === "A";
+    const selectedTypes = assetTypes || [];
+    
+    return (
+      <div 
+        style={{
+          ...S.card,
+          boxShadow: hovered ? theme.shadowHover : theme.shadowCard,
+          transform: hovered ? "translateY(-1px)" : "translateY(0)"
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <div style={S.code}>{q.section} · {q.code}</div>
+        <div style={S.qtext}>{q.text}</div>
+        <div style={S.twoCols}>
+          <Radio 
+            name={q.code} 
+            label="A" 
+            checked={value} 
+            onChange={(v)=>set(q.code,v)} 
+            desc={q.A}
+          />
+          <Radio 
+            name={q.code} 
+            label="B" 
+            checked={value} 
+            onChange={(v)=>set(q.code,v)} 
+            desc={q.B}
+          />
+        </div>
+        {hasNonInvestable && (
+          <div style={{marginTop: 24, paddingTop: 20, borderTop: `1px solid ${theme.border}`}}>
+            <div style={{fontSize: 14, fontWeight: 600, marginBottom: 16, color: theme.text}}>
+              Please select all that apply:
+            </div>
+            <div style={{display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr"}}>
+              {NON_INVESTABLE_ASSET_TYPES.map((assetType) => (
+                <Checkbox
+                  key={assetType.id}
+                  name={`${q.code}_${assetType.id}`}
+                  label={assetType.label}
+                  desc={assetType.description}
+                  checked={selectedTypes.includes(assetType.id)}
+                  onChange={(checked) => {
+                    if (checked) {
+                      setAssetTypes([...selectedTypes, assetType.id]);
+                    } else {
+                      setAssetTypes(selectedTypes.filter(id => id !== assetType.id));
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Regular single choice question
+  return (
+    <div 
+      style={{
+        ...S.card,
+        boxShadow: hovered ? theme.shadowHover : theme.shadowCard,
+        transform: hovered ? "translateY(-1px)" : "translateY(0)"
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div style={S.code}>{q.section} · {q.code} · {q.dimension}{q.isKey ? " · Key": ""}</div>
       <div style={S.qtext}>{q.text}</div>
-      {q.visual && <div style={{marginBottom:12}}>{renderVisual(q.visual)}</div>}
+      {q.visual && <div style={{marginBottom:16}}>{renderVisual(q.visual)}</div>}
       <div style={S.twoCols}>
         <Radio 
           name={q.code} 
@@ -1614,10 +2214,103 @@ function Stat({title, score, pol}){
   );
 }
 
+// Function to recalculate allocation after excluding non-investable assets
+function recalculateAllocation(baseAllocation, excludedAssetTypes) {
+  if (!baseAllocation || !excludedAssetTypes || excludedAssetTypes.length === 0) {
+    return baseAllocation;
+  }
+
+  // Get all sleeves that should be reduced
+  const sleevesToReduce = new Set();
+  excludedAssetTypes.forEach(assetType => {
+    const affectedSleeves = ASSET_TYPE_TO_SLEEVES[assetType] || [];
+    affectedSleeves.forEach(sleeve => sleevesToReduce.add(sleeve));
+  });
+
+  if (sleevesToReduce.size === 0) {
+    return baseAllocation;
+  }
+
+  // Calculate total weight to redistribute (reduce affected sleeves by 60%)
+  let totalToRedistribute = 0;
+  const newSleeves = baseAllocation.sleeves.map(sleeve => {
+    if (sleevesToReduce.has(sleeve.sleeve)) {
+      // Reduce by 60% for affected sleeves
+      const reduction = sleeve.weight * 0.6;
+      totalToRedistribute += reduction;
+      const newWeight = Math.max(0, sleeve.weight - reduction);
+      return {
+        ...sleeve,
+        weight: Math.round(newWeight * 100) / 100,
+        adjustment: reduction > 0 ? `↓ ${Math.round(reduction * 10) / 10}%` : sleeve.adjustment
+      };
+    }
+    return { ...sleeve };
+  });
+
+  // Redistribute proportionally to remaining sleeves (excluding Money Market and reduced sleeves)
+  const eligibleSleeves = newSleeves.filter(s => 
+    !sleevesToReduce.has(s.sleeve) && 
+    s.sleeve !== "Money Market"
+  );
+  const totalEligibleWeight = eligibleSleeves.reduce((sum, s) => sum + s.weight, 0);
+  
+  if (totalEligibleWeight > 0 && totalToRedistribute > 0) {
+    newSleeves.forEach((sleeve, idx) => {
+      if (!sleevesToReduce.has(sleeve.sleeve) && sleeve.sleeve !== "Money Market") {
+        const proportion = sleeve.weight / totalEligibleWeight;
+        const additional = totalToRedistribute * proportion;
+        const oldAdjustment = sleeve.adjustment;
+        const existingIncrease = oldAdjustment && oldAdjustment.includes("↑") 
+          ? parseFloat(oldAdjustment.replace("↑", "").replace("%", "").trim()) || 0 
+          : 0;
+        const newIncrease = existingIncrease + Math.round(additional * 10) / 10;
+        newSleeves[idx] = {
+          ...sleeve,
+          weight: Math.round((sleeve.weight + additional) * 100) / 100,
+          adjustment: oldAdjustment === "—" || oldAdjustment.includes("↓")
+            ? `↑ ${newIncrease.toFixed(1)}%`
+            : `↑ ${newIncrease.toFixed(1)}%`
+        };
+      }
+    });
+  }
+
+  // Normalize to ensure total is 100%
+  const currentTotal = newSleeves.reduce((sum, s) => sum + s.weight, 0);
+  const difference = 100 - currentTotal;
+  if (Math.abs(difference) > 0.01) {
+    // Distribute difference to largest eligible sleeve
+    const eligible = newSleeves.filter(s => s.sleeve !== "Money Market");
+    if (eligible.length > 0) {
+      const largestIdx = newSleeves.findIndex(s => 
+        s.sleeve === eligible.reduce((max, curr) => 
+          curr.weight > max.weight ? curr : max, eligible[0]).sleeve
+      );
+      if (largestIdx >= 0) {
+        newSleeves[largestIdx].weight = Math.round((newSleeves[largestIdx].weight + difference) * 100) / 100;
+      }
+    }
+  }
+
+  const excludedTypesList = excludedAssetTypes.map(id => 
+    NON_INVESTABLE_ASSET_TYPES.find(t => t.id === id)?.label
+  ).filter(Boolean).join(", ");
+
+  return {
+    ...baseAllocation,
+    sleeves: newSleeves,
+    reason: baseAllocation.reason + (excludedTypesList ? 
+      ` Allocation has been adjusted to exclude non-investable assets: ${excludedTypesList}.` : "")
+  };
+}
+
 export default function App(){
   const [answers,setAnswers]=useState({});
   const [show,setShow]=useState(false);
   const [age, setAge] = useState("");
+  const [ageFocused, setAgeFocused] = useState(false);
+  const [excludedAssetTypes, setExcludedAssetTypes] = useState([]);
 
   const done = Object.keys(answers).filter(k=>answers[k]).length;
   const progress = Math.round((done/QUESTIONS.length)*100);
@@ -1625,32 +2318,47 @@ export default function App(){
   const result = useMemo(()=>computeScores(answers),[answers]);
   const change = useMemo(()=>computeChangeIndex(answers), [answers]);
   const desc = ARCHETYPE_DESCRIPTIONS[result.archetype] || "No description available for this code.";
-  const allocation = ALLOCATION_BY_ARCHETYPE[result.archetype];
+  const baseAllocation = ALLOCATION_BY_ARCHETYPE[result.archetype];
+  const allocation = useMemo(() => {
+    if (!baseAllocation) return null;
+    return recalculateAllocation(baseAllocation, excludedAssetTypes);
+  }, [baseAllocation, excludedAssetTypes]);
 
   return (
     <div style={S.page}>
       <div style={S.wrap}>
         {/* header */}
         <div style={S.header}>
-          <div>
-            <h1 style={S.h1}>Plaza Financial Archetype — Questionnaire</h1>
+          <div style={{flex:1}}>
+            <h1 style={S.h1}>Plaza Financial Archetype</h1>
             <p style={S.hint}>Choose A/B for each question. You can submit with partial answers.</p>
             {/* Age input */}
-            <div style={{ display:"flex", gap:12, alignItems:"center", marginTop:8 }}>
-              <label style={{ fontSize:13, color:"#666" }}>
+            <div style={S.ageInput}>
+              <label style={S.ageLabel}>
                 Age:&nbsp;
                 <input
-                  type="number" min="18" max="99" value={age}
+                  type="number" 
+                  min="18" 
+                  max="99" 
+                  value={age}
                   onChange={(e)=>setAge(e.target.value)}
-                  style={{ width:80, padding:"6px 8px", border:"1px solid #e6e6e6", borderRadius:8 }}
+                  onFocus={()=>setAgeFocused(true)}
+                  onBlur={()=>setAgeFocused(false)}
+                  style={{
+                    ...S.ageInputField,
+                    ...(ageFocused ? S.ageInputFieldFocused : {})
+                  }}
                 />
               </label>
             </div>
           </div>
           <div>
             <div style={S.progressBox}>
-              <div style={{textAlign:"right", fontSize:12, color:theme.subtext, marginBottom:4}}>{progress}%</div>
-              <div style={S.progressBar}><div style={S.progressInner(progress)}/></div>
+              <div style={S.progressLabel}>Progress</div>
+              <div style={S.progressBar}>
+                <div style={S.progressInner(progress)}/>
+              </div>
+              <div style={S.progressPercent}>{progress}%</div>
             </div>
           </div>
         </div>
@@ -1658,25 +2366,55 @@ export default function App(){
         {/* questions */}
         <div style={S.grid}>
           {QUESTIONS.map(q=>(
-            <QuestionCard key={q.code} q={q} value={answers[q.code]} set={(code,val)=>setAnswers(p=>({...p,[code]:val}))}/>
+            <QuestionCard 
+              key={q.code} 
+              q={q} 
+              value={answers[q.code]} 
+              set={(code,val)=>{
+                setAnswers(p=>({...p,[code]:val}));
+                // Clear asset types if user selects "No" for non-investable assets
+                if (code === "1.11" && val === "B") {
+                  setExcludedAssetTypes([]);
+                }
+              }}
+              assetTypes={excludedAssetTypes}
+              setAssetTypes={setExcludedAssetTypes}
+            />
           ))}
         </div>
 
         {/* actions */}
         <div style={S.btnRow}>
-          <button style={S.btnPrimary} onClick={()=>setShow(true)}>Compute Archetype</button>
-          <button style={S.btnOutline} onClick={()=>{ setAnswers({}); setShow(false); setAge(""); }}>Reset</button>
+          <ProfessionalButton 
+            primary 
+            onClick={()=>setShow(true)}
+            style={S.btnPrimary}
+          >
+            Compute Archetype
+          </ProfessionalButton>
+          <ProfessionalButton 
+            outline 
+            onClick={()=>{ setAnswers({}); setShow(false); setAge(""); setExcludedAssetTypes([]); }}
+            style={S.btnOutline}
+          >
+            Reset
+          </ProfessionalButton>
         </div>
 
         {/* results */}
         {show && (
           <div style={S.result}>
             <div style={S.resultHead}>
-              <div style={{fontSize:18, fontWeight:700}}>Results</div>
+              <div style={{fontSize:24, fontWeight:700, color:theme.text}}>Results</div>
               <div style={S.badge}>Archetype: <b>{result.archetype}</b></div>
-              <div style={S.badge}>Change vs 3y: <b>{change.direction}</b> <span style={{color:"#666"}}>({change.score}/5)</span></div>
+              <div style={S.badge}>Change vs 3y: <b>{change.direction}</b> <span style={{color:theme.subtext}}>({change.score}/5)</span></div>
               {age && <div style={S.badge}>Age: <b>{age}</b></div>}
-              {result.capacityAdjusted && <div style={{...S.badge, borderColor: theme.green, color: theme.green}}>Capacity triggered → Risk set to S</div>}
+              {result.capacityAdjusted && <div style={{...S.badge, borderColor: theme.green, color: theme.green, background: `${theme.green}10`}}>Capacity triggered → Risk set to S</div>}
+              {excludedAssetTypes.length > 0 && (
+                <div style={{...S.badge, borderColor: theme.accent, color: theme.accent, background: `${theme.accent}10`}}>
+                  Excluded: {excludedAssetTypes.map(id => NON_INVESTABLE_ASSET_TYPES.find(t => t.id === id)?.label).filter(Boolean).join(", ")}
+                </div>
+              )}
             </div>
 
             <div style={S.stats}>
@@ -1709,10 +2447,10 @@ export default function App(){
                 <div style={S.allocChart}>
                   <div style={S.allocBar}>
                     {allocation.sleeves.map((s, idx) => {
-                      // 为不同sleeve类型设置不同颜色
+                      // Professional color palette - blue tones
                       const colors = [
-                        "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", 
-                        "#10b981", "#06b6d4", "#6366f1", "#ef4444"
+                        "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD",
+                        "#10B981", "#14B8A6", "#6366F1", "#8B5CF6"
                       ];
                       const bgColor = colors[idx % colors.length];
                       return (
@@ -1779,16 +2517,17 @@ export default function App(){
         )}
 
         {/* Reference Link Section */}
-        <div style={{...S.card, marginTop: 32, textAlign: "center"}}>
-          <div style={{...S.descTitle, marginBottom: 8}}>Reference</div>
-          <div style={S.descText}>
+        <div style={S.referenceSection}>
+          <div style={{...S.descTitle, marginBottom: 16}}>Reference</div>
+          <div style={{...S.descText, fontSize: 15}}>
             For more details, please refer to the following document:
+            <br />
             <br />
             <a 
               href="https://gowustl-my.sharepoint.com/:w:/g/personal/c_xuanrui_wustl_edu/EXShuU9UQOVHh3LDGsgPFhkBQZF_2ccAQetqtLRQqPVBug?e=lX9q8x"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: theme.primary, textDecoration: "underline", wordBreak: "break-all" }}
+              style={S.referenceLink}
             >
               https://gowustl-my.sharepoint.com/:w:/g/personal/c_xuanrui_wustl_edu/EXShuU9UQOVHh3LDGsgPFhkBQZF_2ccAQetqtLRQqPVBug?e=lX9q8x
             </a>
